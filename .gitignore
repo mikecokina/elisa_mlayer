@@ -1,0 +1,14 @@
+.directory
+.idea
+virtualenv
+*-swp
+virtenv
+env36/*
+*.log
+.cache
+*.pickle
+
+build/*
+dist/*
+docs/build/*
+__pycache__
