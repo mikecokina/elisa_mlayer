@@ -51,17 +51,15 @@ over-contact:
 """
 
 import numpy as np
-from elisa_mlayer.gen import cli
-
+from elisa_mlayer.gen import runner
 
 DB_CONF = {
-        "mysql_user": "root",
-        "mysql_pass": "p4ssw0rd",
-        "mysql_host": "localhost",
-        "mysql_port": 3306,
-        "mysql_database": "elisa_mlayer"
-    }
-
+    "mysql_user": "root",
+    "mysql_pass": "p4ssw0rd",
+    "mysql_host": "localhost",
+    "mysql_port": 3306,
+    "mysql_database": "elisa_mlayer"
+}
 
 PHASES = np.linspace(-0.6, 0.6, 100, endpoint=True)
 PASSBAND = ["Generic.Bessell.B", "Generic.Bessell.V", "Generic.Bessell.R"]
@@ -84,14 +82,21 @@ PARMAS = {
 
 
 def main():
-    _cli = cli.CLI(morphology="over-contact",
-                   db_conf=DB_CONF,
-                   params=PARMAS,
-                   phases=PHASES,
-                   passband=PASSBAND,
-                   threshold=0.01)
+    # _cli = runner.Runner(morphology="over-contact",
+    #                      db_conf=DB_CONF,
+    #                      params=PARMAS,
+    #                      phases=PHASES,
+    #                      passband=PASSBAND,
+    #                      threshold=0.01)
+    #
+    # _cli.run()
 
-    _cli.run()
+    from elisa_mlayer.gen import io
+    storage = io.get_mysqlio(DB_CONF, "synthetic_lc")
+    gen = storage.get_batch_iter(morphology="over-contact", batch_size=10)
+
+    for g in gen():
+        print(len(g))
 
 
 if __name__ == "__main__":

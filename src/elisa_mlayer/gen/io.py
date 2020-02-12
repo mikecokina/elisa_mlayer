@@ -124,7 +124,8 @@ class MySqlIO(object):
             self._model_declarative_meta.primary_t_eff.name: float(params["primary"]["t_eff"]),
             self._model_declarative_meta.secondary_t_eff.name: float(params["secondary"]["t_eff"]),
             self._model_declarative_meta.primary_surface_potential.name: float(params["primary"]["surface_potential"]),
-            self._model_declarative_meta.secondary_surface_potential.name: float(params["secondary"]["surface_potential"]),
+            self._model_declarative_meta.secondary_surface_potential.name: float(
+                params["secondary"]["surface_potential"]),
             self._model_declarative_meta.primary_mass.name: float(params["primary"]["mass"]),
             self._model_declarative_meta.secondary_mass.name: float(params["secondary"]["mass"]),
             self._model_declarative_meta.period.name: float(params["system"]["period"]),
@@ -134,6 +135,27 @@ class MySqlIO(object):
         _session.add(new_record)
         self.finish_session(_session, w=True)
 
+    def get_batch_iter(self, morphology, batch_size):
+        _session = self._get_session()
+
+        def _iter():
+            loop_index = 0
+
+            while True:
+
+                result = _session.query(self._model_instance) \
+                    .filter(self._model_declarative_meta.morphology == morphology) \
+                    .offset(loop_index * batch_size) \
+                    .limit(batch_size) \
+                    .all()
+
+                loop_index += 1
+                if len(result) == 0:
+                    break
+
+                yield result
+        return _iter
+
 
 class CsvIO(object):
     pass
@@ -141,4 +163,3 @@ class CsvIO(object):
 
 def get_mysqlio(db_conf, table_name=conf.DEFAULT_MYSQLIO_TABLE_NAME):
     return MySqlIO(db_conf, table_name=table_name)
-

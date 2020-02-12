@@ -130,15 +130,14 @@ class LCGenerator(object):
 
             reslc = None
             try:
-                # reslc = self.generate_lc(bs)
-                pass
+                reslc = self.generate_lc(bs)
             except LimbDarkeningError:
                 logger.info(f"hit LimbDarkeningError, continue")
                 continue
 
-            # if self.kick_by_threshold(reslc):
-            #     logger.info(f"hit threshold {self.threshold}, continue")
-            #     continue
+            if self.kick_by_threshold(reslc):
+                logger.info(f"hit threshold {self.threshold}, continue")
+                continue
 
             self._valid_curves += 1
             logger.info(f"evaluated {self._valid_curves}th light cruve")

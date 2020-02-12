@@ -4,7 +4,7 @@ from elisa.logger import getPersistentLogger
 logger = getPersistentLogger('cli')
 
 
-class CLI(object):
+class Runner(object):
     def __init__(self, morphology, db_conf, params, phases, passband, threshold):
         self._morphology = morphology
         self._phases = phases
@@ -32,5 +32,4 @@ class CLI(object):
     def run(self):
         logger.info("Starting generator")
         for _data in self._generator:
-            pass
-            # self._storage.save(*_data)
+            self._storage.save(*_data)
