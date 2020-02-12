@@ -92,11 +92,12 @@ def main():
     # _cli.run()
 
     from elisa_mlayer.gen import io
+    from elisa_mlayer.gen import plot
     storage = io.get_mysqlio(DB_CONF, "synthetic_lc")
     gen = storage.get_batch_iter(morphology="over-contact", batch_size=10)
 
-    for g in gen():
-        print(len(g))
+    plt = plot.Plot()
+    plt.dataset(gen, passband="Generic.Bessell.V")
 
 
 if __name__ == "__main__":
