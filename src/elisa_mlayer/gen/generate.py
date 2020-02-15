@@ -1,24 +1,28 @@
 import numpy as np
 import itertools
+import time
 
 from abc import abstractmethod
+from numpy import random
 
 from elisa.base.error import MorphologyError, LimbDarkeningError
 from elisa.binary_system.system import BinarySystem
+from elisa.conf.config import BINARY_COUNTERPARTS
 from elisa.observer.observer import Observer
 from elisa_mlayer.gen import conf, utils
 from elisa.logger import getPersistentLogger
 from elisa.const import SOLAR_RADIUS
 
-
+random.seed(int(time.time()))
 logger = getPersistentLogger("elisa_mplayer.gen.generate")
 
 
 class StarDataBoundaries(object):
-    def __init__(self, mass, surface_potential, t_eff):
+    def __init__(self, mass, surface_potential, t_eff, spots=None):
         self.mass = mass
         self.surface_potential = surface_potential
         self.t_eff = t_eff
+        self.spots = spots
 
     @classmethod
     def from_json(cls, data):
@@ -85,9 +89,10 @@ class LCGenerator(object):
                 "synchronicity": 1.0,
                 "t_eff": kwargs["primary_t_eff"],
                 "gravity_darkening": utils.get_gravity_darkening(kwargs["primary_t_eff"]),
-                "discretization_factor": 5,
+                "discretization_factor": 10,
                 "albedo": utils.get_albedo(kwargs["secondary_t_eff"]),
-                "metallicity": 0.0
+                "metallicity": 0.0,
+                "spots": kwargs.get("primary_spots")
             },
             "secondary": {
                 "mass": kwargs["secondary_mass"],
@@ -96,13 +101,27 @@ class LCGenerator(object):
                 "t_eff": kwargs["secondary_t_eff"],
                 "gravity_darkening": utils.get_gravity_darkening(kwargs["secondary_t_eff"]),
                 "albedo": utils.get_albedo(kwargs["secondary_t_eff"]),
-                "metallicity": 0.0
+                "metallicity": 0.0,
+                "spots": kwargs.get("secondary_spots")
             }
         }
+
+    def add_spots(self, params):
+        for component in BINARY_COUNTERPARTS:
+            if getattr(getattr(self, str(component)), "spots"):
+                params[f"{component}_spots"] = [
+                    {
+                        "longitude": random.uniform(*spot_deffiniton["longitude"]),
+                        "latitude": random.uniform(*spot_deffiniton["latitude"]),
+                        "angular_radius": random.uniform(*spot_deffiniton["angular_radius"]),
+                        "temperature_factor": random.uniform(*spot_deffiniton["temperature_factor"])
+                    } for spot_deffiniton in getattr(getattr(self, str(component)), "spots")]
+        return params
 
     def __iter__(self):
         for params in self.parameters:
             params = self.params_to_dict(params)
+            params = self.add_spots(params)
             params = self.params_to_elisa_json(**params)
 
             try:
@@ -130,6 +149,9 @@ class LCGenerator(object):
 
             reslc = None
             try:
+                self._valid_curves += 1
+                logger.info(f"generator finished, hit {self._valid_curves} light curves")
+                continue
                 reslc = self.generate_lc(bs)
             except LimbDarkeningError:
                 logger.info(f"hit LimbDarkeningError, continue")
