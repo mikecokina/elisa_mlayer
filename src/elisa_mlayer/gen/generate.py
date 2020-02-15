@@ -43,6 +43,7 @@ class LCGenerator(object):
     MORPHOLOGY = ''
 
     def __init__(self, phases, passband, threshold, **kwargs):
+        self._total = 0
         self._valid_curves = 0
         self.phases = phases
 
@@ -119,7 +120,9 @@ class LCGenerator(object):
         return params
 
     def __iter__(self):
+
         for params in self.parameters:
+            self._total += 1
             params = self.params_to_dict(params)
             params = self.add_spots(params)
             params = self.params_to_elisa_json(**params)
@@ -127,30 +130,30 @@ class LCGenerator(object):
             try:
                 bs = BinarySystem.from_json(params, _verify=False, _kind_of="std")
             except MorphologyError:
-                logger.info(f"hit MorphologyError, continue")
+                # logger.info(f"hit MorphologyError, continue")
                 continue
 
             if self.kick_by_potential(params["primary"]["surface_potential"], bs):
-                logger.info(f"hit invalid surface potential, max allowed (critical) "
-                            f"{bs.primary.critical_surface_potential}, given: {params['primary']['surface_potential']}")
+                # logger.info(f"hit invalid surface potential, max allowed (critical) "
+                #             f"{bs.primary.critical_surface_potential}, given: {params['primary']['surface_potential']}")
                 continue
 
             if self.kick_by_radius(bs):
-                logger.info(f"hit invalid radius out of <0.2 - 35> Solar radii, continue")
+                # logger.info(f"hit invalid radius out of <0.2 - 35> Solar radii, continue")
                 continue
 
             if self.kick_by_eclipse(bs):
-                logger.info(f"hit no-eclipse constellation, continue")
+                # logger.info(f"hit no-eclipse constellation, continue")
                 continue
 
             if self.eval_morphology_skip(bs):
-                logger.info(f"hit {bs.morphology} system, {self.MORPHOLOGY} expeted, continue")
+                # logger.info(f"hit {bs.morphology} system, {self.MORPHOLOGY} expeted, continue")
                 continue
 
             reslc = None
             try:
                 self._valid_curves += 1
-                logger.info(f"generator finished, hit {self._valid_curves} light curves")
+                logger.info(f"generator finished, hit {self._valid_curves} light curves {self._valid_curves}/{self._total}")
                 continue
                 reslc = self.generate_lc(bs)
             except LimbDarkeningError:
