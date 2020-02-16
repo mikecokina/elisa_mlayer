@@ -52,17 +52,8 @@ over-contact:
 
 import numpy as np
 from elisa_mlayer.gen import runner
+from elisa_mlayer.config import DB_CONF
 
-DB_CONF = {
-    "mysql_user": "root",
-    "mysql_pass": "p4ssw0rd",
-    "mysql_host": "localhost",
-    "mysql_port": 3306,
-    "mysql_database": "elisa_mlayer"
-}
-
-PHASES = np.linspace(-0.6, 0.6, 100, endpoint=True)
-PASSBAND = ["Generic.Bessell.B", "Generic.Bessell.V", "Generic.Bessell.R"]
 PARMAS = {
     "system": {
         "inclination": (30.0, 95.0, 5.0),
@@ -124,22 +115,22 @@ PARMAS = {
 
 
 def main():
-    _runner = runner.Runner(morphology="detached",
-                            db_conf=DB_CONF,
-                            params=PARMAS,
-                            phases=PHASES,
-                            passband=PASSBAND,
-                            threshold=0.01)
-
-    _runner.run()
-
-    # from elisa_mlayer.gen import io
-    # from elisa_mlayer.gen import plot
-    # storage = io.get_mysqlio(DB_CONF, "synthetic_lc")
-    # gen = storage.get_batch_iter(morphology="over-contact", batch_size=10)
+    # _runner = runner.Runner(morphology="detached",
+    #                         db_conf=DB_CONF,
+    #                         params=PARMAS,
+    #                         phases=PHASES,
+    #                         passband=PASSBAND,
+    #                         threshold=0.01)
     #
-    # plt = plot.Plot()
-    # plt.dataset(gen, passband="Generic.Bessell.V")
+    # _runner.run()
+
+    from elisa_mlayer import io
+    from elisa_mlayer.gen import plot
+    storage = io.get_mysqlio(DB_CONF, "synthetic_lc")
+    gen = storage.get_batch_iter(morphology="over-contact", batch_size=10, limit=1)
+
+    plt = plot.Plot()
+    plt.dataset(gen, passband="Generic.Bessell.V")
 
 
 if __name__ == "__main__":

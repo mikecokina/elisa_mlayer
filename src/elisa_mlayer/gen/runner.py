@@ -1,4 +1,5 @@
-from elisa_mlayer.gen import io, generate
+from elisa_mlayer import io
+from elisa_mlayer.gen import generate
 from elisa.logger import getPersistentLogger
 
 logger = getPersistentLogger('runner')

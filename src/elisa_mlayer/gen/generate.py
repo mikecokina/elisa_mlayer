@@ -14,7 +14,7 @@ from elisa.logger import getPersistentLogger
 from elisa.const import SOLAR_RADIUS
 
 random.seed(int(time.time()))
-logger = getPersistentLogger("elisa_mplayer.gen.generate")
+logger = getPersistentLogger("gen.generate")
 
 
 class StarDataBoundaries(object):
@@ -68,6 +68,8 @@ class LCGenerator(object):
                                             primary_surface_potential, secondary_surface_potential,
                                             inclination, period))
 
+        self.spotty_system = True if self.primary.spots or self.secondary.spots else False
+
     @staticmethod
     def params_to_dict(params):
         return {k: v for k, v in zip(conf.PARAMETERS_ORDERED_LIST, params)}
@@ -120,7 +122,6 @@ class LCGenerator(object):
         return params
 
     def __iter__(self):
-
         for params in self.parameters:
             self._total += 1
             params = self.params_to_dict(params)
@@ -166,7 +167,7 @@ class LCGenerator(object):
 
             self._valid_curves += 1
             logger.info(f"evaluated {self._valid_curves}th light cruve")
-            yield reslc, params, bs.morphology
+            yield reslc, params, bs.morphology, self.spotty_system
 
         logger.info(f"generator finished, hit {self._valid_curves} light curves")
 

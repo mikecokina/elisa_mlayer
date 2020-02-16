@@ -1,9 +1,9 @@
 import json
+import numpy as np
 
-from sqlalchemy import create_engine, Column, Integer, String, Float, Text
+from sqlalchemy import create_engine, Column, Integer, String, Float, Text, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-
 from elisa_mlayer.gen import conf, utils
 
 
@@ -65,6 +65,7 @@ def build_synthetic_lightcurve_model(table_name):
         secondary_mass = Column(Float(), nullable=False, name='secondary_mass')
         period = Column(Float(), nullable=False, name='period')
         inclination = Column(Float(), nullable=False, name='inclination')
+        spotty = Column(Boolean(), nullable=False, name='spotty')
 
     return SyntheticLightCurvesModel
 
@@ -111,7 +112,7 @@ class MySqlIO(object):
             session.commit()
         session.close()
 
-    def save(self, data, params, morphology):
+    def save(self, data, params, morphology, spotty):
         _session = self._get_session()
 
         if self.__model_instance is None:
@@ -129,14 +130,16 @@ class MySqlIO(object):
             self._model_declarative_meta.primary_mass.name: float(params["primary"]["mass"]),
             self._model_declarative_meta.secondary_mass.name: float(params["secondary"]["mass"]),
             self._model_declarative_meta.period.name: float(params["system"]["period"]),
-            self._model_declarative_meta.inclination.name: float(params["system"]["inclination"])
+            self._model_declarative_meta.inclination.name: float(params["system"]["inclination"]),
+            self._model_declarative_meta.spotty.name: spotty
         }
         new_record = self._model_declarative_meta(**params)
         _session.add(new_record)
         self.finish_session(_session, w=True)
 
-    def get_batch_iter(self, morphology, batch_size):
+    def get_batch_iter(self, morphology, batch_size, limit=np.inf):
         _session = self._get_session()
+        _counter = 0
 
         def _iter():
             loop_index = 0
@@ -154,6 +157,10 @@ class MySqlIO(object):
                     break
 
                 yield result
+
+                if loop_index > limit:
+                    break
+
         return _iter
 
 
