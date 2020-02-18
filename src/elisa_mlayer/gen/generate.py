@@ -122,6 +122,7 @@ class LCGenerator(object):
         return params
 
     def __iter__(self):
+        # print(len(list(self.parameters)))
         for params in self.parameters:
             self._total += 1
             params = self.params_to_dict(params)
@@ -135,38 +136,44 @@ class LCGenerator(object):
                 continue
 
             if self.kick_by_potential(params["primary"]["surface_potential"], bs):
-                # logger.info(f"hit invalid surface potential, max allowed (critical) "
-                #             f"{bs.primary.critical_surface_potential}, given: {params['primary']['surface_potential']}")
+                logger.debug(f"hit invalid surface potential, max allowed (critical) "
+                             f"{bs.primary.critical_surface_potential}, "
+                             f"given: {params['primary']['surface_potential']}")
                 continue
 
             if self.kick_by_radius(bs):
-                # logger.info(f"hit invalid radius out of <0.2 - 35> Solar radii, continue")
+                logger.debug(f"hit invalid radius out of <0.2 - 35> Solar radii, continue")
                 continue
 
             if self.kick_by_eclipse(bs):
-                # logger.info(f"hit no-eclipse constellation, continue")
+                logger.debug(f"hit no-eclipse constellation, continue")
                 continue
 
             if self.eval_morphology_skip(bs):
-                # logger.info(f"hit {bs.morphology} system, {self.MORPHOLOGY} expeted, continue")
+                logger.debug(f"hit {bs.morphology} system, {self.MORPHOLOGY} expeted, continue")
                 continue
 
-            reslc = None
+            # reslc = None
             try:
-                self._valid_curves += 1
-                logger.info(f"generator finished, hit {self._valid_curves} light curves {self._valid_curves}/{self._total}")
-                continue
                 reslc = self.generate_lc(bs)
+
+                if (len(bs.primary.spots) == 0) & (len(bs.secondary.spots) == 0):
+                    logger.debug(f"spot/s have been kicked of due to invalid position, continue")
+                    continue
+
+                self._valid_curves += 1
+                logger.info(f"generator finished, light curves {self._valid_curves}/{self._total} [lc/runs]")
             except LimbDarkeningError:
-                logger.info(f"hit LimbDarkeningError, continue")
+                logger.debug(f"hit LimbDarkeningError, continue")
+                continue
+            except FloatingPointError:
+                logger.debug(f"most likely hit invalid spot, continue")
                 continue
 
             if self.kick_by_threshold(reslc):
                 logger.info(f"hit threshold {self.threshold}, continue")
                 continue
 
-            self._valid_curves += 1
-            logger.info(f"evaluated {self._valid_curves}th light cruve")
             yield reslc, params, bs.morphology, self.spotty_system
 
         logger.info(f"generator finished, hit {self._valid_curves} light curves")

@@ -15,7 +15,7 @@ class Plot(object):
         for batch in db_data_iterator():
             for record in batch:
                 data = json.loads(record.data)
-                plt.plot(data[0], np.array(data[1][passband]) / max(data[1][passband]))
+                plt.plot(data[0], np.array(data[1][passband]) / data[1][passband][70])
 
         ax.legend(loc=1)
         ax.set_xlabel("$Phase [-]$")

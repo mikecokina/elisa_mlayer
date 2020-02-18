@@ -147,7 +147,8 @@ class MySqlIO(object):
             while True:
 
                 result = _session.query(self._model_instance) \
-                    .filter(self._model_declarative_meta.morphology == morphology) \
+                    .filter(self._model_declarative_meta.morphology == morphology,
+                            self._model_declarative_meta.spotty == 1) \
                     .offset(loop_index * batch_size) \
                     .limit(batch_size) \
                     .all()
