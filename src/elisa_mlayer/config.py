@@ -1,5 +1,6 @@
 import numpy as np
 
+
 DB_CONF = {
     "mysql_user": "root",
     "mysql_pass": "p4ssw0rd",

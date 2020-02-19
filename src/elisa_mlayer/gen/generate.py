@@ -10,11 +10,11 @@ from elisa.binary_system.system import BinarySystem
 from elisa.conf.config import BINARY_COUNTERPARTS
 from elisa.observer.observer import Observer
 from elisa_mlayer.gen import conf, utils
-from elisa.logger import getPersistentLogger
+from elisa_mlayer.logger import getLogger
 from elisa.const import SOLAR_RADIUS
 
 random.seed(int(time.time()))
-logger = getPersistentLogger("gen.generate")
+logger = getLogger("gen.generate")
 
 
 class StarDataBoundaries(object):
@@ -92,7 +92,7 @@ class LCGenerator(object):
                 "synchronicity": 1.0,
                 "t_eff": kwargs["primary_t_eff"],
                 "gravity_darkening": utils.get_gravity_darkening(kwargs["primary_t_eff"]),
-                "discretization_factor": 10,
+                "discretization_factor": 5,
                 "albedo": utils.get_albedo(kwargs["secondary_t_eff"]),
                 "metallicity": 0.0,
                 "spots": kwargs.get("primary_spots")

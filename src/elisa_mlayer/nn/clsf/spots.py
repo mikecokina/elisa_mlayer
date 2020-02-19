@@ -4,20 +4,20 @@ import numpy as np
 import tensorflow as tf
 
 from numpy import random
-from elisa.logger import getPersistentLogger
 from tensorflow_core.python.keras.utils.np_utils import to_categorical
 
 from elisa_mlayer import (
     config,
     utils
 )
+
+from elisa_mlayer.logger import getLogger
 from elisa_mlayer.io import MySqlIO
 from elisa_mlayer.nn.base import layers, losses, nn, optimizers
 from elisa_mlayer.nn.clsf.base import KerasNet
 
-
 random.seed(int(time.time()))
-logger = getPersistentLogger("nn.clsf.mlp.has_spots")
+logger = getLogger("nn.clsf.mlp.has_spots")
 
 
 class Feed(MySqlIO):
