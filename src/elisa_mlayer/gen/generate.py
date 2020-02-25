@@ -156,8 +156,7 @@ class LCGenerator(object):
             # reslc = None
             try:
                 reslc = self.generate_lc(bs)
-
-                if (len(bs.primary.spots) == 0) & (len(bs.secondary.spots) == 0):
+                if (len(bs.primary.spots) == 0) & (len(bs.secondary.spots) == 0) & bool(self.spotty_system):
                     logger.debug(f"spot/s have been kicked of due to invalid position, continue")
                     continue
 
