@@ -12,7 +12,7 @@ from elisa_mlayer import (
 )
 
 from elisa_mlayer.logger import getLogger
-from elisa_mlayer.io import MySqlIO
+from elisa_mlayer.io import SyntheticMySqlIO
 from elisa_mlayer.nn.base import layers, losses, nn, optimizers
 from elisa_mlayer.nn.clsf.base import KerasNet
 
@@ -20,7 +20,7 @@ random.seed(int(time.time()))
 logger = getLogger("nn.clsf.mlp.has_spots")
 
 
-class Feed(MySqlIO):
+class Feed(SyntheticMySqlIO):
     def get_feed(self, test_size=0.2, passband='Generic.Bessell.V'):
         session = self._get_session()
         data = session.query(self._model_instance).with_entities(self._model_declarative_meta.spotty,

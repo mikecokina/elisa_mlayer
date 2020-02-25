@@ -123,22 +123,22 @@ PARMAS = {
 
 
 def main():
-    # _runner = runner.Runner(morphology="over-contact",
-    #                         db_conf=DB_CONF,
-    #                         params=PARMAS,
-    #                         phases=PHASES,
-    #                         passband=PASSBAND,
-    #                         threshold=0.01)
+    _runner = runner.Runner(morphology="over-contact",
+                            db_conf=DB_CONF,
+                            params=PARMAS,
+                            phases=PHASES,
+                            passband=PASSBAND,
+                            threshold=0.01)
+
+    _runner.run()
+
+    # from elisa_mlayer import sio
+    # from elisa_mlayer.gen import plot
+    # storage = sio.get_mysqlio(DB_CONF, "synthetic_lc")
+    # gen = storage.get_batch_iter(morphology="over-contact", batch_size=10, limit=np.inf)
     #
-    # _runner.run()
-
-    from elisa_mlayer import io
-    from elisa_mlayer.gen import plot
-    storage = io.get_mysqlio(DB_CONF, "synthetic_lc")
-    gen = storage.get_batch_iter(morphology="over-contact", batch_size=10, limit=np.inf)
-
-    plt = plot.Plot()
-    plt.dataset(gen, passband="Generic.Bessell.V")
+    # plt = plot.Plot()
+    # plt.dataset(gen, passband="Generic.Bessell.V")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 import json
 import numpy as np
 
+from abc import abstractmethod
 from sqlalchemy import create_engine, Column, Integer, String, Float, Text, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -55,7 +56,7 @@ def build_synthetic_lightcurve_model(table_name):
 
         id = Column(Integer, primary_key=True, name='id', autoincrement=True)
         morphology = Column(String(length=30), nullable=False, name='morphology')
-        params = Column(Text(length=200), nullable=False, name='params')
+        params = Column(Text(length=5000), nullable=False, name='params')
         data = Column(Text(length=100000), nullable=False, name='data')
         primary_t_eff = Column(Float(), nullable=False, name='primary_t_eff')
         secondary_t_eff = Column(Float(), nullable=False, name='secondary_t_eff')
@@ -70,14 +71,32 @@ def build_synthetic_lightcurve_model(table_name):
     return SyntheticLightCurvesModel
 
 
-class MySqlIO(object):
-    builder_fn = staticmethod(build_synthetic_lightcurve_model)
+def build_observed_lightcurve_model(table_name):
+    class ObservedLightCurvesModel(declarative_base()):
+        __tablename__ = table_name
+
+        id = Column(Integer, primary_key=True, name='id', autoincrement=True)
+        morphology = Column(String(length=30), nullable=False, name='morphology')
+        passband = Column(String(length=64), nullable=True, name='passband')
+        params = Column(Text(length=5000), nullable=True, name='params')
+        data = Column(Text(length=100000), nullable=False, name='data')
+        origin = Column(Text(length=2000000), nullable=True, name='origin')
+        period = Column(Float(), nullable=False, name='period')
+        target = Column(String(length=128), nullable=True, name='target')
+        epoch = Column(Float(), nullable=True, name='epoch')
+        meta = Column(Text(length=10000), nullable=True, name='meta')
+
+    return ObservedLightCurvesModel
+
+
+class AbstractMySqlIO(object):
+    @staticmethod
+    @abstractmethod
+    def builder_fn(*args, **kwargs):
+        pass
 
     def __init__(self, db_conf, table_name):
         self._db_conf = db_conf.copy()
-
-        self.__model_instance = None
-        self.__model_declarative_meta = None
 
         self._table_name = table_name
         self._engine = _engine_pool.get_or_create_engine(db_conf)
@@ -111,6 +130,19 @@ class MySqlIO(object):
             session.flush()
             session.commit()
         session.close()
+
+    @abstractmethod
+    def save(self, *args, **kwargs):
+        pass
+
+
+class SyntheticMySqlIO(AbstractMySqlIO):
+    builder_fn = staticmethod(build_synthetic_lightcurve_model)
+
+    def __init__(self, db_conf, table_name):
+        self.__model_instance = None
+        self.__model_declarative_meta = None
+        super().__init__(db_conf, table_name)
 
     def save(self, data, params, morphology, spotty):
         _session = self._get_session()
@@ -165,9 +197,39 @@ class MySqlIO(object):
         return _iter
 
 
+class ObservedMySqlIO(AbstractMySqlIO):
+    builder_fn = staticmethod(build_observed_lightcurve_model)
+
+    def __init__(self, db_conf, table_name):
+        self.__model_instance = None
+        self.__model_declarative_meta = None
+        super().__init__(db_conf, table_name)
+
+    def save(self, morphology, passband, params, data, origin, period, target, epoch, meta):
+        _session = self._get_session()
+
+        if self.__model_instance is None:
+            self._initialise_model()
+
+        params = {
+            self._model_declarative_meta.morphology.name: morphology,
+            self._model_declarative_meta.passband.name: passband,
+            self._model_declarative_meta.params.name: params,
+            self._model_declarative_meta.data.name: data,
+            self._model_declarative_meta.origin.name: origin,
+            self._model_declarative_meta.period.name: period,
+            self._model_declarative_meta.target.name: target,
+            self._model_declarative_meta.epoch.name: epoch,
+            self._model_declarative_meta.meta.name: meta
+        }
+        new_record = self._model_declarative_meta(**params)
+        _session.add(new_record)
+        self.finish_session(_session, w=True)
+
+
 class CsvIO(object):
     pass
 
 
 def get_mysqlio(db_conf, table_name=conf.DEFAULT_MYSQLIO_TABLE_NAME):
-    return MySqlIO(db_conf, table_name=table_name)
+    return SyntheticMySqlIO(db_conf, table_name=table_name)

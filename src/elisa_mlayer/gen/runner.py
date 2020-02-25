@@ -1,4 +1,4 @@
-from elisa_mlayer import io
+from elisa_mlayer import sio
 from elisa_mlayer.gen import generate
 from elisa_mlayer.logger import getLogger
 
@@ -13,7 +13,7 @@ class Runner(object):
         self._passband = passband
         self._db_conf = db_conf
         self._params = params
-        self._storage = io.get_mysqlio(self._db_conf)
+        self._storage = sio.get_mysqlio(self._db_conf)
         self._generator = self._get_generator()
 
     def _get_generator(self):
