@@ -13,7 +13,7 @@ from elisa_mlayer import config
 HOST = "localhost"
 USER = "root"
 PWD = "p4ssw0rd"
-PHASES = np.linspace(-0.6, 0.6, 50, endpoint=True)
+PHASES = np.linspace(-0.6, 0.6, 100, endpoint=True)
 
 
 class Database(object):

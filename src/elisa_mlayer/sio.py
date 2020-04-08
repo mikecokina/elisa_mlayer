@@ -201,7 +201,6 @@ class SyntheticMySqlIO(AbstractMySqlIO):
     def get_batch_iter(self, morphology, batch_size, limit=np.inf):
         self._preinit_method()
         _session = self._get_session()
-        _counter = 0
 
         def _iter():
             loop_index = 0
@@ -293,9 +292,7 @@ class SyntheticExtendedMySqlIO(AbstractMySqlIO):
 
     def spotty_batch_itter(self, batch_size, passband, morphology=None, limit=np.inf):
         self._preinit_method()
-
         _session = self._get_session()
-        _counter = 0
 
         def _iter():
             loop_index = 0
