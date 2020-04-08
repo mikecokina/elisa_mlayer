@@ -14,6 +14,10 @@ class KerasNet(object):
         self.model.fit(self.train_xs, self.train_ys, epochs=epochs)
 
 
+class KerasSequenceNet(object):
+    def __init__(self):
+        pass
+
     """
     
     classifier = Sequential()

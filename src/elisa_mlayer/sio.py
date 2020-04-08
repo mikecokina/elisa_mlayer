@@ -71,6 +71,30 @@ def build_synthetic_lightcurve_model(table_name):
     return SyntheticLightCurvesModel
 
 
+def build_synthetic_lightcurve_model_extended(table_name):
+    class SyntheticLightCurvesModelExtended(declarative_base()):
+        __tablename__ = table_name
+
+        id = Column(Integer, primary_key=True, name='id', autoincrement=True)
+        morphology = Column(String(length=30), nullable=False, name='morphology')
+        params = Column(Text(length=5000), nullable=False, name='params')
+        phases = Column(Text(length=100000), nullable=False, name='phases')
+        generic_bessell_b = Column(Text(length=100000), nullable=False, name='generic_bessell_b')
+        generic_bessell_v = Column(Text(length=100000), nullable=False, name='generic_bessell_v')
+        generic_bessell_r = Column(Text(length=100000), nullable=False, name='generic_bessell_r')
+        primary_t_eff = Column(Float(), nullable=False, name='primary_t_eff')
+        secondary_t_eff = Column(Float(), nullable=False, name='secondary_t_eff')
+        primary_surface_potential = Column(Float(), nullable=False, name='primary_surface_potential')
+        secondary_surface_potential = Column(Float(), nullable=False, name='secondary_surface_potential')
+        primary_mass = Column(Float(), nullable=False, name='primary_mass')
+        secondary_mass = Column(Float(), nullable=False, name='secondary_mass')
+        period = Column(Float(), nullable=False, name='period')
+        inclination = Column(Float(), nullable=False, name='inclination')
+        spotty = Column(Boolean(), nullable=False, name='spotty')
+
+    return SyntheticLightCurvesModelExtended
+
+
 def build_observed_lightcurve_model(table_name):
     class ObservedLightCurvesModel(declarative_base()):
         __tablename__ = table_name
@@ -101,22 +125,25 @@ class AbstractMySqlIO(object):
         self._table_name = table_name
         self._engine = _engine_pool.get_or_create_engine(db_conf)
 
-    @property
-    def _model_instance(self):
-        if self.__model_instance is None:
-            self._initialise_model()
-        return self.__model_instance
+        self._model_instance = None
+        self._model_declarative_meta = None
 
     @property
-    def _model_declarative_meta(self):
-        if self.__model_declarative_meta is None:
+    def model_instance(self):
+        if self._model_instance is None:
             self._initialise_model()
-        return self.__model_declarative_meta
+        return self._model_instance
+
+    @property
+    def model_declarative_meta(self):
+        if self._model_declarative_meta is None:
+            self._initialise_model()
+        return self._model_declarative_meta
 
     def _initialise_model(self):
-        self.__model_declarative_meta = self.builder_fn(table_name=self._table_name)
+        self._model_declarative_meta = self.builder_fn(table_name=self._table_name)
         self._model_declarative_meta.metadata.create_all(self._engine)
-        self.__model_instance = self._model_declarative_meta.metadata.tables.get(self._table_name)
+        self._model_instance = self._model_declarative_meta.metadata.tables.get(self._table_name)
 
     def _get_session(self):
         # Create sample session
@@ -135,19 +162,21 @@ class AbstractMySqlIO(object):
     def save(self, *args, **kwargs):
         pass
 
+    def _preinit_method(self):
+        if self._model_instance is None:
+            self._initialise_model()
+
 
 class SyntheticMySqlIO(AbstractMySqlIO):
     builder_fn = staticmethod(build_synthetic_lightcurve_model)
 
     def __init__(self, db_conf, table_name):
-        self.__model_instance = None
-        self.__model_declarative_meta = None
         super().__init__(db_conf, table_name)
 
     def save(self, data, params, morphology, spotty):
         _session = self._get_session()
 
-        if self.__model_instance is None:
+        if self._model_instance is None:
             self._initialise_model()
 
         params = {
@@ -170,6 +199,7 @@ class SyntheticMySqlIO(AbstractMySqlIO):
         self.finish_session(_session, w=True)
 
     def get_batch_iter(self, morphology, batch_size, limit=np.inf):
+        self._preinit_method()
         _session = self._get_session()
         _counter = 0
 
@@ -227,9 +257,84 @@ class ObservedMySqlIO(AbstractMySqlIO):
         self.finish_session(_session, w=True)
 
 
+class SyntheticExtendedMySqlIO(AbstractMySqlIO):
+    builder_fn = staticmethod(build_synthetic_lightcurve_model_extended)
+
+    def __init__(self, db_conf, table_name):
+        super().__init__(db_conf, table_name)
+
+    def save(self, data, params, morphology, spotty):
+        self._preinit_method()
+        _session = self._get_session()
+        data = utils.lc_to_json_serializable(data)
+
+        params = {
+            self._model_declarative_meta.morphology.name: morphology,
+            self._model_declarative_meta.params.name: json.dumps(params),
+            self._model_declarative_meta.phases.name: json.dumps(data[0]),
+            self._model_declarative_meta.generic_bessell_b.name: json.dumps(data[1]['Generic.Bessell.B']),
+            self._model_declarative_meta.generic_bessell_v.name: json.dumps(data[1]['Generic.Bessell.V']),
+            self._model_declarative_meta.generic_bessell_r.name: json.dumps(data[1]['Generic.Bessell.R']),
+            self._model_declarative_meta.primary_t_eff.name: float(params["primary"]["t_eff"]),
+            self._model_declarative_meta.secondary_t_eff.name: float(params["secondary"]["t_eff"]),
+            self._model_declarative_meta.primary_surface_potential.name:
+                float(params["primary"]["surface_potential"]),
+            self._model_declarative_meta.secondary_surface_potential.name:
+                float(params["secondary"]["surface_potential"]),
+            self._model_declarative_meta.primary_mass.name: float(params["primary"]["mass"]),
+            self._model_declarative_meta.secondary_mass.name: float(params["secondary"]["mass"]),
+            self._model_declarative_meta.period.name: float(params["system"]["period"]),
+            self._model_declarative_meta.inclination.name: float(params["system"]["inclination"]),
+            self._model_declarative_meta.spotty.name: spotty
+        }
+        new_record = self._model_declarative_meta(**params)
+        _session.add(new_record)
+        self.finish_session(_session, w=True)
+
+    def spotty_batch_itter(self, batch_size, passband, morphology=None, limit=np.inf):
+        self._preinit_method()
+
+        _session = self._get_session()
+        _counter = 0
+
+        def _iter():
+            loop_index = 0
+
+            while True:
+
+                if morphology:
+                    result = _session.query(self._model_instance)\
+                        .filter(self._model_declarative_meta.morphology == morphology)\
+                        .offset(loop_index * batch_size)\
+                        .limit(batch_size)\
+                        .with_entities(
+                        getattr(self._model_declarative_meta, "spotty"),
+                        getattr(self._model_declarative_meta, conf.PASSBAND_TO_COL[passband])
+                    ).all()
+                else:
+                    result = _session.query(self._model_instance) \
+                        .offset(loop_index * batch_size) \
+                        .limit(batch_size) \
+                        .with_entities(
+                        getattr(self._model_declarative_meta, "spotty"),
+                        getattr(self._model_declarative_meta, conf.PASSBAND_TO_COL[passband])
+                    ).all()
+
+                loop_index += 1
+                if len(result) == 0:
+                    break
+
+                yield result
+
+                if loop_index > limit:
+                    break
+
+        return _iter
+
+
 class CsvIO(object):
     pass
 
 
-def get_mysqlio(db_conf, table_name=conf.DEFAULT_MYSQLIO_TABLE_NAME):
-    return SyntheticMySqlIO(db_conf, table_name=table_name)
+def get_mysqlio(db_conf, table_name=conf.DEFAULT_MYSQLIO_TABLE_NAME, io_cls=SyntheticMySqlIO):
+    return io_cls(db_conf, table_name=table_name)

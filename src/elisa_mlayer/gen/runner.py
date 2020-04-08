@@ -1,16 +1,17 @@
 from elisa_mlayer import sio
 from elisa_mlayer.gen import generate
 from elisa_mlayer.logger import getLogger
+from elisa_mlayer.config import PASSBAND
 
 logger = getLogger('runner')
 
 
 class Runner(object):
-    def __init__(self, morphology, db_conf, params, phases, passband, threshold):
+    def __init__(self, morphology, db_conf, params, phases, threshold):
         self._morphology = morphology
         self._phases = phases
         self._threshold = threshold
-        self._passband = passband
+        self._passband = PASSBAND
         self._db_conf = db_conf
         self._params = params
         self._storage = sio.get_mysqlio(self._db_conf)

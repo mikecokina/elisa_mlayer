@@ -12,7 +12,7 @@ from elisa_mlayer import (
 )
 
 from elisa_mlayer.logger import getLogger
-from elisa_mlayer.io import SyntheticMySqlIO
+from elisa_mlayer.sio import SyntheticMySqlIO
 from elisa_mlayer.nn.base import layers, losses, nn, optimizers
 from elisa_mlayer.nn.clsf.base import KerasNet
 

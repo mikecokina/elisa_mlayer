@@ -7,7 +7,7 @@ Recomended parameters
 
 detached:
 
-    PARMAS = {
+    PARAMS = {
         "system": {
             "inclination": (70.0, 95.0, 5.0),
             # reference: https://www.cambridge.org/core/journals/publications-of-the-astronomical-society-of-australia/article/catalogue-of-stellar-parameters-from-the-detached-doublelined-eclipsing-binaries-in-the-milky-way/678AD993366CA4506DD671527906FCBD/core-reader
@@ -30,7 +30,7 @@ detached:
 
 over-contact:
 
-    PARMAS = {
+    PARAMS = {
         "system": {
             "inclination": (30.0, 95.0, 5.0),
             "period": (0.2, 0.9, 0.1) # reference: https://academic.oup.com/mnras/article/382/1/393/984693
@@ -54,7 +54,7 @@ import numpy as np
 from elisa_mlayer.gen import runner
 from elisa_mlayer.config import DB_CONF, PHASES, PASSBAND
 
-PARMAS = {
+PARAMS = {
     "system": {
         "inclination": (30.0, 95.0, 5.0),
         "period": (0.2, 0.9, 0.1)
@@ -79,7 +79,7 @@ PARMAS = {
     }
 }
 
-# PARMAS = {
+# PARAMS = {
 #     "system": {
 #         "inclination": (70.0, 95.0, 5.0),
 #         "period": (0.4, 3.0, 0.5)  # higher density
@@ -96,7 +96,7 @@ PARMAS = {
 #     }
 # }
 
-# PARMAS = {
+# PARAMS = {
 #     "system": {
 #         "inclination": (30.0, 95.0, 5.0),
 #         "period": (0.2, 0.9, 0.1)
@@ -125,9 +125,8 @@ PARMAS = {
 def main():
     _runner = runner.Runner(morphology="over-contact",
                             db_conf=DB_CONF,
-                            params=PARMAS,
+                            params=PARAMS,
                             phases=PHASES,
-                            passband=PASSBAND,
                             threshold=0.01)
 
     _runner.run()

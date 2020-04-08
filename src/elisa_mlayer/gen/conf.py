@@ -17,3 +17,10 @@ PARAMETERS_ORDERED_LIST = ["primary_mass",
 
 
 DEFAULT_MYSQLIO_TABLE_NAME = "synthetic_lc"
+
+
+PASSBAND_TO_COL = {
+    "Generic.Bessell.B": "generic_bessell_b",
+    "Generic.Bessell.V": "generic_bessell_v",
+    "Generic.Bessell.R": "generic_bessell_r"
+}

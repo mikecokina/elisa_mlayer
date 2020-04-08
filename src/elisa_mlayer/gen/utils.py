@@ -14,7 +14,11 @@ def lc_to_json_serializable(data):
     result = [list(), dict()]
     if not isinstance(data[0], list):
         result[0] = data[0].tolist()
+    else:
+        result[0] = data[0]
     for band in data[1]:
         if not isinstance(data[1][band], list):
             result[1][band] = data[1][band].tolist()
+        else:
+            result[1][band] = data[1][band]
     return result
