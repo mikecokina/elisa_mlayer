@@ -208,8 +208,7 @@ class SyntheticMySqlIO(AbstractMySqlIO):
             while True:
 
                 result = _session.query(self._model_instance) \
-                    .filter(self._model_declarative_meta.morphology == morphology,
-                            self._model_declarative_meta.spotty == 1) \
+                    .filter(self._model_declarative_meta.morphology == morphology) \
                     .offset(loop_index * batch_size) \
                     .limit(batch_size) \
                     .all()
