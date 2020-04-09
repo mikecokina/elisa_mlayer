@@ -97,6 +97,6 @@ for row in dataset:
     passband = ""
     metadata = json.dumps(metadata)
 
-    args = (morphology, passband, params, data, origin, period, target, epoch, metadata)
+    iterable_data = [(morphology, passband, params, data, origin, period, target, epoch, metadata)]
     storage = sio.ObservedMySqlIO(config.DB_CONF, table_name="observed_lc")
-    storage.save(*args)
+    storage.save(iterable_data)

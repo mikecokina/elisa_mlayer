@@ -34,4 +34,4 @@ class Runner(object):
     def run(self):
         logger.info("Starting generator")
         for _data in self._generator:
-            self._storage.save(*_data)
+            self._storage.save([_data])

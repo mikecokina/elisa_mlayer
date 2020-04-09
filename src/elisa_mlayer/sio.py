@@ -173,29 +173,31 @@ class SyntheticMySqlIO(AbstractMySqlIO):
     def __init__(self, db_conf, table_name):
         super().__init__(db_conf, table_name)
 
-    def save(self, data, params, morphology, spotty):
+    def save(self, iterable):
+        self._preinit_method()
         _session = self._get_session()
 
-        if self._model_instance is None:
-            self._initialise_model()
+        for row in iterable:
+            data, params, morphology, spotty = row
 
-        params = {
-            self._model_declarative_meta.morphology.name: morphology,
-            self._model_declarative_meta.params.name: json.dumps(params),
-            self._model_declarative_meta.data.name: json.dumps(utils.lc_to_json_serializable(data)),
-            self._model_declarative_meta.primary_t_eff.name: float(params["primary"]["t_eff"]),
-            self._model_declarative_meta.secondary_t_eff.name: float(params["secondary"]["t_eff"]),
-            self._model_declarative_meta.primary_surface_potential.name: float(params["primary"]["surface_potential"]),
-            self._model_declarative_meta.secondary_surface_potential.name: float(
-                params["secondary"]["surface_potential"]),
-            self._model_declarative_meta.primary_mass.name: float(params["primary"]["mass"]),
-            self._model_declarative_meta.secondary_mass.name: float(params["secondary"]["mass"]),
-            self._model_declarative_meta.period.name: float(params["system"]["period"]),
-            self._model_declarative_meta.inclination.name: float(params["system"]["inclination"]),
-            self._model_declarative_meta.spotty.name: spotty
-        }
-        new_record = self._model_declarative_meta(**params)
-        _session.add(new_record)
+            params = {
+                self._model_declarative_meta.morphology.name: morphology,
+                self._model_declarative_meta.params.name: json.dumps(params),
+                self._model_declarative_meta.data.name: json.dumps(utils.lc_to_json_serializable(data)),
+                self._model_declarative_meta.primary_t_eff.name: float(params["primary"]["t_eff"]),
+                self._model_declarative_meta.secondary_t_eff.name: float(params["secondary"]["t_eff"]),
+                self._model_declarative_meta.primary_surface_potential.name: float(params["primary"]["surface_potential"]),
+                self._model_declarative_meta.secondary_surface_potential.name: float(
+                    params["secondary"]["surface_potential"]),
+                self._model_declarative_meta.primary_mass.name: float(params["primary"]["mass"]),
+                self._model_declarative_meta.secondary_mass.name: float(params["secondary"]["mass"]),
+                self._model_declarative_meta.period.name: float(params["system"]["period"]),
+                self._model_declarative_meta.inclination.name: float(params["system"]["inclination"]),
+                self._model_declarative_meta.spotty.name: spotty
+            }
+            new_record = self._model_declarative_meta(**params)
+            _session.add(new_record)
+
         self.finish_session(_session, w=True)
 
     def get_batch_iter(self, morphology, batch_size, limit=np.inf):
@@ -233,25 +235,27 @@ class ObservedMySqlIO(AbstractMySqlIO):
         self.__model_declarative_meta = None
         super().__init__(db_conf, table_name)
 
-    def save(self, morphology, passband, params, data, origin, period, target, epoch, meta):
+    def save(self, iterable):
+        self._preinit_method()
         _session = self._get_session()
 
-        if self.__model_instance is None:
-            self._initialise_model()
+        for row in iterable:
+            morphology, passband, params, data, origin, period, target, epoch, meta = row
 
-        params = {
-            self._model_declarative_meta.morphology.name: morphology,
-            self._model_declarative_meta.passband.name: passband,
-            self._model_declarative_meta.params.name: params,
-            self._model_declarative_meta.data.name: data,
-            self._model_declarative_meta.origin.name: origin,
-            self._model_declarative_meta.period.name: period,
-            self._model_declarative_meta.target.name: target,
-            self._model_declarative_meta.epoch.name: epoch,
-            self._model_declarative_meta.meta.name: meta
-        }
-        new_record = self._model_declarative_meta(**params)
-        _session.add(new_record)
+            params = {
+                self._model_declarative_meta.morphology.name: morphology,
+                self._model_declarative_meta.passband.name: passband,
+                self._model_declarative_meta.params.name: params,
+                self._model_declarative_meta.data.name: data,
+                self._model_declarative_meta.origin.name: origin,
+                self._model_declarative_meta.period.name: period,
+                self._model_declarative_meta.target.name: target,
+                self._model_declarative_meta.epoch.name: epoch,
+                self._model_declarative_meta.meta.name: meta
+            }
+            new_record = self._model_declarative_meta(**params)
+            _session.add(new_record)
+
         self.finish_session(_session, w=True)
 
 
@@ -261,32 +265,40 @@ class SyntheticExtendedMySqlIO(AbstractMySqlIO):
     def __init__(self, db_conf, table_name):
         super().__init__(db_conf, table_name)
 
-    def save(self, data, params, morphology, spotty):
+    def save(self, iterable):
+        """
+        :param iterable: List; [(data, params, morphology, spotty), ...]
+        """
         self._preinit_method()
         _session = self._get_session()
-        data = utils.lc_to_json_serializable(data)
 
-        params = {
-            self._model_declarative_meta.morphology.name: morphology,
-            self._model_declarative_meta.params.name: json.dumps(params),
-            self._model_declarative_meta.phases.name: json.dumps(data[0]),
-            self._model_declarative_meta.generic_bessell_b.name: json.dumps(data[1]['Generic.Bessell.B']),
-            self._model_declarative_meta.generic_bessell_v.name: json.dumps(data[1]['Generic.Bessell.V']),
-            self._model_declarative_meta.generic_bessell_r.name: json.dumps(data[1]['Generic.Bessell.R']),
-            self._model_declarative_meta.primary_t_eff.name: float(params["primary"]["t_eff"]),
-            self._model_declarative_meta.secondary_t_eff.name: float(params["secondary"]["t_eff"]),
-            self._model_declarative_meta.primary_surface_potential.name:
-                float(params["primary"]["surface_potential"]),
-            self._model_declarative_meta.secondary_surface_potential.name:
-                float(params["secondary"]["surface_potential"]),
-            self._model_declarative_meta.primary_mass.name: float(params["primary"]["mass"]),
-            self._model_declarative_meta.secondary_mass.name: float(params["secondary"]["mass"]),
-            self._model_declarative_meta.period.name: float(params["system"]["period"]),
-            self._model_declarative_meta.inclination.name: float(params["system"]["inclination"]),
-            self._model_declarative_meta.spotty.name: spotty
-        }
-        new_record = self._model_declarative_meta(**params)
-        _session.add(new_record)
+        for row in iterable:
+            data, params, morphology, spotty = row
+
+            data = utils.lc_to_json_serializable(data)
+
+            params = {
+                self._model_declarative_meta.morphology.name: morphology,
+                self._model_declarative_meta.params.name: json.dumps(params),
+                self._model_declarative_meta.phases.name: json.dumps(data[0]),
+                self._model_declarative_meta.generic_bessell_b.name: json.dumps(data[1]['Generic.Bessell.B']),
+                self._model_declarative_meta.generic_bessell_v.name: json.dumps(data[1]['Generic.Bessell.V']),
+                self._model_declarative_meta.generic_bessell_r.name: json.dumps(data[1]['Generic.Bessell.R']),
+                self._model_declarative_meta.primary_t_eff.name: float(params["primary"]["t_eff"]),
+                self._model_declarative_meta.secondary_t_eff.name: float(params["secondary"]["t_eff"]),
+                self._model_declarative_meta.primary_surface_potential.name:
+                    float(params["primary"]["surface_potential"]),
+                self._model_declarative_meta.secondary_surface_potential.name:
+                    float(params["secondary"]["surface_potential"]),
+                self._model_declarative_meta.primary_mass.name: float(params["primary"]["mass"]),
+                self._model_declarative_meta.secondary_mass.name: float(params["secondary"]["mass"]),
+                self._model_declarative_meta.period.name: float(params["system"]["period"]),
+                self._model_declarative_meta.inclination.name: float(params["system"]["inclination"]),
+                self._model_declarative_meta.spotty.name: spotty
+            }
+            new_record = self._model_declarative_meta(**params)
+            _session.add(new_record)
+
         self.finish_session(_session, w=True)
 
     def spotty_batch_itter(self, batch_size, passband, morphology=None, limit=np.inf):
