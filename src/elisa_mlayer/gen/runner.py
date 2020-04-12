@@ -7,14 +7,14 @@ logger = getLogger('runner')
 
 
 class Runner(object):
-    def __init__(self, morphology, db_conf, params, phases, threshold):
+    def __init__(self, morphology, db_conf, params, phases, threshold, table_name, io_cls):
         self._morphology = morphology
         self._phases = phases
         self._threshold = threshold
         self._passband = PASSBAND
         self._db_conf = db_conf
         self._params = params
-        self._storage = sio.get_mysqlio(self._db_conf)
+        self._storage = sio.get_mysqlio(self._db_conf, table_name=table_name, io_cls=io_cls)
         self._generator = self._get_generator()
 
     def _get_generator(self):

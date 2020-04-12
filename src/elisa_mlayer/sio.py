@@ -71,8 +71,8 @@ def build_synthetic_lightcurve_model(table_name):
     return SyntheticLightCurvesModel
 
 
-def build_synthetic_lightcurve_model_extended(table_name):
-    class SyntheticLightCurvesModelExtended(declarative_base()):
+def build_synthetic_lightcurve_model_flat(table_name):
+    class SyntheticLightCurvesModelFlat(declarative_base()):
         __tablename__ = table_name
 
         id = Column(Integer, primary_key=True, name='id', autoincrement=True)
@@ -92,7 +92,7 @@ def build_synthetic_lightcurve_model_extended(table_name):
         inclination = Column(Float(), nullable=False, name='inclination')
         spotty = Column(Boolean(), nullable=False, name='spotty')
 
-    return SyntheticLightCurvesModelExtended
+    return SyntheticLightCurvesModelFlat
 
 
 def build_observed_lightcurve_model(table_name):
@@ -259,8 +259,8 @@ class ObservedMySqlIO(AbstractMySqlIO):
         self.finish_session(_session, w=True)
 
 
-class SyntheticExtendedMySqlIO(AbstractMySqlIO):
-    builder_fn = staticmethod(build_synthetic_lightcurve_model_extended)
+class SyntheticFlatMySqlIO(AbstractMySqlIO):
+    builder_fn = staticmethod(build_synthetic_lightcurve_model_flat)
 
     def __init__(self, db_conf, table_name):
         super().__init__(db_conf, table_name)
@@ -325,6 +325,45 @@ class SyntheticExtendedMySqlIO(AbstractMySqlIO):
                         .limit(batch_size) \
                         .with_entities(
                         getattr(self._model_declarative_meta, "spotty"),
+                        getattr(self._model_declarative_meta, conf.PASSBAND_TO_COL[passband])
+                    ).all()
+
+                loop_index += 1
+                if len(result) == 0:
+                    break
+
+                yield result
+
+                if loop_index > limit:
+                    break
+
+        return _iter
+
+    def morphology_batch_itter(self, batch_size, passband, spotty=None, limit=np.inf):
+        self._preinit_method()
+        _session = self._get_session()
+
+        def _iter():
+            loop_index = 0
+
+            while True:
+
+                if isinstance(spotty, bool):
+
+                    result = _session.query(self._model_instance)\
+                        .filter(self._model_declarative_meta.spotty == spotty)\
+                        .offset(loop_index * batch_size)\
+                        .limit(batch_size)\
+                        .with_entities(
+                        getattr(self._model_declarative_meta, "morphology"),
+                        getattr(self._model_declarative_meta, conf.PASSBAND_TO_COL[passband])
+                    ).all()
+                else:
+                    result = _session.query(self._model_instance) \
+                        .offset(loop_index * batch_size) \
+                        .limit(batch_size) \
+                        .with_entities(
+                        getattr(self._model_declarative_meta, "morphology"),
                         getattr(self._model_declarative_meta, conf.PASSBAND_TO_COL[passband])
                     ).all()
 

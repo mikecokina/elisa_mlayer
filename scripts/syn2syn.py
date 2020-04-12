@@ -7,7 +7,7 @@ from elisa_mlayer import config
 
 morphologies = ['over-contact', 'detached']
 std_mysql_io = sio.get_mysqlio(config.DB_CONF, io_cls=sio.SyntheticMySqlIO)
-extd_mysql_io = sio.get_mysqlio(config.DB_CONF, table_name="synthetic_lc_col", io_cls=sio.SyntheticExtendedMySqlIO)
+extd_mysql_io = sio.get_mysqlio(config.DB_CONF, table_name="synthetic_lc_col", io_cls=sio.SyntheticFlatMySqlIO)
 
 
 if __name__ == "__main__":
