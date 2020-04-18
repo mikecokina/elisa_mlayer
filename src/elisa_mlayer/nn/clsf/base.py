@@ -1,9 +1,12 @@
 class KerasNet(object):
-    def __init__(self, test_size):
+    def __init__(self, test_size, **kwargs):
         self._test_size = float(test_size)
         self.model = None
         self._feed = None
         self.train_xs, self.train_ys, self.test_xs, self.test_ys = None, None, None, None
+
+        self._learning_rate = float(kwargs.get("learning_rate", 1e-3))
+        self._optimizer_decay = float(kwargs.get("optimizer_decay", 1e-6))
 
     @property
     def model_precission(self):

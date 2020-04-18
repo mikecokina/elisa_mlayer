@@ -24,17 +24,22 @@ logger = getLogger("nn.clsf.mlp.has_spots")
 
 class Feed(SyntheticFlatMySqlIO):
     def get_feed(self, test_size=0.2, passband='Generic.Bessell.V'):
+        logger.info('initializing db session')
         self._preinit_method()
         session = self._get_session()
+
+        logger.info('getting training data')
         data = session.query(self._model_instance) \
             .with_entities(
             self._model_declarative_meta.spotty,
             getattr(self._model_declarative_meta, conf.PASSBAND_TO_COL[passband])
         ).all()
 
+        logger.info('shuffling data')
         self.finish_session(session, w=False)
         np.random.shuffle(data)
 
+        logger.info('preparing test and training batches')
         ys, xs = zip(*data)
         ys, xs = np.array(ys), np.array([json.loads(row) for row in xs])
         xs = np.divide(xs, xs.max(axis=1)[:, None])
@@ -55,7 +60,7 @@ class Feed(SyntheticFlatMySqlIO):
 
 class AbstractHasSpotsNet(KerasNet):
     def __init__(self, test_size, passband='Generic.Bessell.V', **kwargs):
-        super().__init__(test_size=test_size)
+        super().__init__(test_size=test_size, **kwargs)
 
         self._n_class = (0, 1)
         self._passband = str(passband)
@@ -77,7 +82,7 @@ class MlpNet(AbstractHasSpotsNet):
         self.model.add(layers.Dense(256, activation=nn.relu))
         self.model.add(layers.Dense(2, activation=nn.softmax))
 
-        optimizer = optimizers.Adam(lr=0.001, decay=1e-6)
+        optimizer = optimizers.Adam(lr=self._learning_rate, decay=self._optimizer_decay)
         loss_fn = losses.SparseCategoricalCrossentropy()
 
         self.model.compile(optimizer=optimizer, loss=loss_fn, metrics=['accuracy'])
@@ -104,7 +109,7 @@ class Conv1DNet(AbstractHasSpotsNet):
         self.model.add(layers.Dropout(0.25))
         self.model.add(layers.Dense(2, activation=nn.softmax))
 
-        optimizer = optimizers.Adam(lr=1e-3, decay=1e-6)
+        optimizer = optimizers.Adam(lr=self._learning_rate, decay=self._optimizer_decay)
         loss_fn = losses.CategoricalCrossentropy()
         self.model.compile(loss=loss_fn, optimizer=optimizer, metrics=['accuracy'])
 
@@ -117,14 +122,21 @@ if __name__ == "__main__":
     parser.add_argument('--passband', type=str, nargs='?', help='passband', default='Generic.Bessell.V')
     parser.add_argument('--test-size', type=float, nargs='?', help='test size', default=0.2)
     parser.add_argument('--epochs', type=int, nargs='?', help='learning epochs', default=100)
+    parser.add_argument('--learning-rate', type=float, nargs='?', help='learning rate', default=1e-3)
+    parser.add_argument('--optimizer-decay', type=float, nargs='?', help='optimizer decay', default=1e-6)
     args = parser.parse_args()
 
     if args.net is None:
         raise ValueError("Positional argument is required, choices: `MlpNet`, `Conv1DNet`")
     net = getattr(sys.modules[__name__], args.net)
-    conv = net(test_size=args.test_size, passband=args.passband, table_name=args.table)
+    params = dict(
+        table_name=args.table,
+        learning_rate=args.learning_rate,
+        optimizer_decay=args.optimizer_decay
+    )
+    conv = net(test_size=args.test_size, passband=args.passband, **params)
     conv.train(epochs=args.epochs)
-    print(conv.model_precission)
+    logger.info(f'model precision: {conv.model_precission}')
 
     # predictions = mlp.model.predict(mlp.test_xs)
     # for val, pred in zip(mlp.test_ys, predictions):
