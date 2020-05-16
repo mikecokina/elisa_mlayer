@@ -1,9 +1,21 @@
+import pickle
+from elisa.logger import getLogger
+
+logger = getLogger("nn.clsf.base")
+
+
 class KerasNet(object):
     def __init__(self, test_size, **kwargs):
         self._test_size = float(test_size)
+        self._from_pickle = kwargs.get('pickle', False)
         self.model = None
         self._feed = None
+
         self.train_xs, self.train_ys, self.test_xs, self.test_ys = None, None, None, None
+        if self._from_pickle:
+            logger.info("loading feed from pickle")
+            self.load_feed(self._from_pickle)
+            self._from_pickle = True
 
         self._learning_rate = float(kwargs.get("learning_rate", 1e-3))
         self._optimizer_decay = float(kwargs.get("optimizer_decay", 1e-6))
@@ -15,6 +27,12 @@ class KerasNet(object):
 
     def train(self, epochs):
         self.model.fit(self.train_xs, self.train_ys, epochs=epochs)
+
+    def save_feed(self, fpath):
+        pickle.dump((self.train_xs, self.train_ys, self.test_xs, self.test_ys), open(fpath, "wb"))
+
+    def load_feed(self, fpath):
+        self.train_xs, self.train_ys, self.test_xs, self.test_ys = pickle.load(open(fpath, "rb"))
 
 
 class KerasSequenceNet(object):

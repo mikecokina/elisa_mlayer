@@ -9,7 +9,7 @@ PARAMS = {
     },
     "primary": {
         "mass": (0.5, 3.25, 0.25),
-        "surface_potential": (2.0, 4.0, 0.25),
+        "surface_potential": (5.0, 10.0, 0.25),
         "t_eff": (4000.0, 7000.0, 1000.0),
         "spots": [
                     {
@@ -22,14 +22,14 @@ PARAMS = {
     },
     "secondary": {
         "mass": (0.5, 3.25, 0.25),
-        "surface_potential": (2.0, 4.0, 0.25),
+        "surface_potential": (5.0, 10.0, 0.25),
         "t_eff": (4000.0, 7000.0, 1000.0)
     }
 }
 
 
 def main():
-    _runner = runner.Runner(morphology="over-contact",
+    _runner = runner.Runner(morphology="detached",
                             db_conf=DB_CONF,
                             params=PARAMS,
                             phases=PHASES,

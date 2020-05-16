@@ -62,14 +62,16 @@ class AbstractHasSpotsNet(KerasNet):
     def __init__(self, test_size, passband='Generic.Bessell.V', **kwargs):
         super().__init__(test_size=test_size, **kwargs)
 
-        self._n_class = (0, 1)
+        self._n_class = 2
         self._passband = str(passband)
         self._table_name = str(kwargs.get("table_name", "synthetic_lc"))
 
-        logger.info("obtaining training data")
-        self._feed = Feed(config.DB_CONF, table_name=self._table_name)
-        self.train_xs, self.train_ys, self.test_xs, self.test_ys = \
-            self._feed.get_feed(test_size=test_size, passband=passband)
+        if not self._from_pickle:
+            logger.info("obtaining training data")
+
+            self._feed = Feed(config.DB_CONF, table_name=self._table_name)
+            self.train_xs, self.train_ys, self.test_xs, self.test_ys = \
+                self._feed.get_feed(test_size=test_size, passband=passband)
 
 
 class MlpNet(AbstractHasSpotsNet):
@@ -124,6 +126,9 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', type=int, nargs='?', help='learning epochs', default=100)
     parser.add_argument('--learning-rate', type=float, nargs='?', help='learning rate', default=1e-3)
     parser.add_argument('--optimizer-decay', type=float, nargs='?', help='optimizer decay', default=1e-6)
+    parser.add_argument('--load-pickle', type=str, nargs='?', help='path to load pickle file', default=None)
+    parser.add_argument('--save-pickle', type=str, nargs='?', help='path to save pickle file', default=None)
+
     args = parser.parse_args()
 
     if args.net is None:
@@ -132,11 +137,18 @@ if __name__ == "__main__":
     params = dict(
         table_name=args.table,
         learning_rate=args.learning_rate,
-        optimizer_decay=args.optimizer_decay
+        optimizer_decay=args.optimizer_decay,
+        pickle=args.load_pickle or None
     )
     conv = net(test_size=args.test_size, passband=args.passband, **params)
+
+    if args.save_pickle is not None:
+        conv.save_feed(args.save_pickle)
+
     conv.train(epochs=args.epochs)
+
     logger.info(f'model precision: {conv.model_precission}')
+    logger.info(conv.model.summary())
 
     # predictions = mlp.model.predict(mlp.test_xs)
     # for val, pred in zip(mlp.test_ys, predictions):

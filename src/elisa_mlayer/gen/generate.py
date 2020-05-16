@@ -128,7 +128,7 @@ class LCGenerator(object):
             params = self.params_to_dict(params)
             params = self.add_spots(params)
             params = self.params_to_elisa_json(**params)
-            
+
             if self.kick_by_overcontact_teff(params["primary"]["t_eff"], params["secondary"]["t_eff"], self.MORPHOLOGY):
                 logger.debug(f"hit invalid over-contact t_eff combination")
                 continue
