@@ -6,7 +6,7 @@ import sys
 import json
 
 from numpy import random
-from tensorflow_core.python.keras.utils.np_utils import to_categorical
+from keras.utils import to_categorical
 
 from elisa_mlayer import (
     config,
@@ -99,7 +99,7 @@ class MlpNet(AbstractMorphologysNet):
         self.model.add(layers.Dense(2, activation=nn.softmax))
 
         optimizer = optimizers.Adam(lr=self._learning_rate, decay=self._optimizer_decay)
-        loss_fn = losses.SparseCategoricalCrossentropy()
+        loss_fn = losses.sparse_categorical_crossentropy
 
         self.model.compile(optimizer=optimizer, loss=loss_fn, metrics=['accuracy'])
 
@@ -126,7 +126,7 @@ class Conv1DNet(AbstractMorphologysNet):
         self.model.add(layers.Dense(2, activation=nn.softmax))
 
         optimizer = optimizers.Adam(lr=self._learning_rate, decay=self._optimizer_decay)
-        loss_fn = losses.CategoricalCrossentropy()
+        loss_fn = losses.categorical_crossentropy
         self.model.compile(loss=loss_fn, optimizer=optimizer, metrics=['accuracy'])
 
 

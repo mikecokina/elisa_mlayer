@@ -1,4 +1,4 @@
-import tensorflow as tf
+import keras
 
-SparseCategoricalCrossentropy = tf.keras.losses.SparseCategoricalCrossentropy
-CategoricalCrossentropy = tf.keras.losses.CategoricalCrossentropy
+sparse_categorical_crossentropy = keras.losses.sparse_categorical_crossentropy
+categorical_crossentropy = keras.losses.categorical_crossentropy
