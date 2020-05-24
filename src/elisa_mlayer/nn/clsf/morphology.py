@@ -108,11 +108,12 @@ class Conv1DNet(AbstractMorphologysNet):
     def __init__(self, test_size, passband='Generic.Bessell.V', **kwargs):
         super().__init__(test_size, passband, **kwargs)
 
-        self.train_xs = np.expand_dims(self.train_xs, axis=2)
-        self.test_xs = np.expand_dims(self.test_xs, axis=2)
+        if not self._from_pickle:
+            self.train_xs = np.expand_dims(self.train_xs, axis=2)
+            self.test_xs = np.expand_dims(self.test_xs, axis=2)
 
-        self.train_ys = to_categorical(self.train_ys, self._n_class)
-        self.test_ys = to_categorical(self.test_ys, self._n_class)
+            self.train_ys = to_categorical(self.train_ys, self._n_class)
+            self.test_ys = to_categorical(self.test_ys, self._n_class)
 
         logger.info("creating neural model")
         self.model = tf.keras.Sequential()
