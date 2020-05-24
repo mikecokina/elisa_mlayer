@@ -130,6 +130,8 @@ class Conv1DNet(AbstractMorphologysNet):
         loss_fn = losses.categorical_crossentropy
         self.model.compile(loss=loss_fn, optimizer=optimizer, metrics=['accuracy'])
 
+        self.weights = self.model.get_weights()
+
 
 if __name__ == "__main__":
 
@@ -144,6 +146,8 @@ if __name__ == "__main__":
     parser.add_argument('--optimizer-decay', type=float, nargs='?', help='optimizer decay', default=1e-6)
     parser.add_argument('--load-pickle', type=str, nargs='?', help='path to load pickle file', default=None)
     parser.add_argument('--save-pickle', type=str, nargs='?', help='path to save pickle file', default=None)
+    parser.add_argument('--save-history', type=str, nargs='?',
+                        help='path to json where fit history will be stored', default=None)
 
     args = parser.parse_args()
 
@@ -164,6 +168,9 @@ if __name__ == "__main__":
         conv.save_feed(args.save_pickle)
 
     conv.train(epochs=args.epochs)
+
+    if args.save_history is not None:
+        conv.save_history(args.save_history)
 
     logger.info(f'model precision: {conv.model_precission}')
     logger.info(conv.model.summary())
