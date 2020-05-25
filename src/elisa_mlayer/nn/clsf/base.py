@@ -145,14 +145,14 @@ def main(args, modules):
             with open(op.join(args.home, filename), "w") as f:
                 f.write(data)
 
-        from matplotlib import pyplot as plt
-
-        for hist, learning_rate in zip(loss_history, lr_s):
-            plt.plot(np.arange(0, len(hist)), hist, label=f"lr: {learning_rate}")
-
-        plt.legend()
-        plt.show()
-
-        plt.xscale("log")
-        plt.plot(lr_s, np.array(loss_history)[:, -1])
-        plt.show()
+        # from matplotlib import pyplot as plt
+        #
+        # for hist, learning_rate in zip(loss_history, lr_s):
+        #     plt.plot(np.arange(0, len(hist)), hist, label=f"lr: {learning_rate}")
+        #
+        # plt.legend()
+        # plt.show()
+        #
+        # plt.xscale("log")
+        # plt.plot(lr_s, np.array(loss_history)[:, -1])
+        # plt.show()
