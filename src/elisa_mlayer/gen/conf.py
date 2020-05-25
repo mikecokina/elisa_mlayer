@@ -24,3 +24,5 @@ PASSBAND_TO_COL = {
     "Generic.Bessell.V": "generic_bessell_v",
     "Generic.Bessell.R": "generic_bessell_r"
 }
+
+DATETIME_MASK = '%Y-%m-%dT%H.%M.%S'

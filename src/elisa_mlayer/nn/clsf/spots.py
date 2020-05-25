@@ -88,13 +88,14 @@ class MlpNet(AbstractHasSpotsNet):
         loss_fn = losses.sparse_categorical_crossentropy
 
         self.model.compile(optimizer=optimizer, loss=loss_fn, metrics=['accuracy'])
+        self.weights = self.model.get_weights()
 
 
 class Conv1DNet(AbstractHasSpotsNet):
     def __init__(self, test_size, passband='Generic.Bessell.V', **kwargs):
         super().__init__(test_size, passband, **kwargs)
 
-        if not self._from_pickle:
+        if not self._from_pickle and self._reinitialize_feed:
             self.train_xs = np.expand_dims(self.train_xs, axis=2)
             self.test_xs = np.expand_dims(self.test_xs, axis=2)
 
@@ -115,6 +116,7 @@ class Conv1DNet(AbstractHasSpotsNet):
         optimizer = optimizers.Adam(lr=self._learning_rate, decay=self._optimizer_decay)
         loss_fn = losses.categorical_crossentropy
         self.model.compile(loss=loss_fn, optimizer=optimizer, metrics=['accuracy'])
+        self.weights = self.model.get_weights()
 
 
 if __name__ == "__main__":

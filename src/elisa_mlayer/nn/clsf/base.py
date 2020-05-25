@@ -9,16 +9,19 @@ class KerasNet(object):
     def __init__(self, test_size, **kwargs):
         self._test_size = float(test_size)
         self._from_pickle = kwargs.get('pickle', False)
+        self._reinitialize_feed = kwargs.get("reinitialize_feed", True)
+
         self.model = None
         self._feed = None
         self.weights = None
         self.history = None
 
-        self.train_xs, self.train_ys, self.test_xs, self.test_ys = None, None, None, None
-        if self._from_pickle:
-            logger.info("loading feed from pickle")
-            self.load_feed(self._from_pickle)
-            self._from_pickle = True
+        if self._reinitialize_feed:
+            self.train_xs, self.train_ys, self.test_xs, self.test_ys = None, None, None, None
+            if self._from_pickle:
+                logger.info("loading feed from pickle")
+                self.load_feed(self._from_pickle)
+                self._from_pickle = True
 
         self._learning_rate = float(kwargs.get("learning_rate", 1e-3))
         self._optimizer_decay = float(kwargs.get("optimizer_decay", 1e-6))
@@ -29,22 +32,21 @@ class KerasNet(object):
         return {"loss": val_loss, "accuracy": val_acc}
 
     @property
-    def loss(self):
+    def val_loss(self):
         val_loss, _ = self.model.evaluate(self.test_xs, self.test_ys)
         return val_loss
 
     @property
-    def acc(self):
+    def val_acc(self):
         _, val_acc = self.model.evaluate(self.test_xs, self.test_ys)
         return val_acc
-    
-    accuracy = acc
 
     def train(self, epochs):
         """
         :return: history
         """
-        self.history = self.model.fit(self.train_xs, self.train_ys, epochs=epochs)
+        self.history = self.model.fit(self.train_xs, self.train_ys, epochs=epochs,
+                                      validation_data=(self.test_xs, self.test_ys))
         return self.history
 
     def save_feed(self, fpath):
@@ -55,7 +57,7 @@ class KerasNet(object):
 
     def reset_weights(self):
         if self.weights is not None and self.model is not None:
-            self.model.set_weight(self.weights)
+            self.model.set_weights(self.weights)
 
     def save_history(self, fpath):
         if self.history is not None:

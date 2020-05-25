@@ -1,12 +1,15 @@
 import argparse
+import json
+import os
+import os.path as op
+import sys
 import time
 import numpy as np
 import tensorflow as tf
-import sys
-import json
 
-from numpy import random
+from datetime import datetime
 from keras.utils import to_categorical
+from numpy import random
 
 from elisa_mlayer import (
     config,
@@ -14,9 +17,9 @@ from elisa_mlayer import (
 )
 from elisa_mlayer.gen import conf
 from elisa_mlayer.logger import getLogger
-from elisa_mlayer.sio import SyntheticFlatMySqlIO
 from elisa_mlayer.nn.base import layers, losses, nn, optimizers
 from elisa_mlayer.nn.clsf.base import KerasNet
+from elisa_mlayer.sio import SyntheticFlatMySqlIO
 
 random.seed(int(time.time()))
 logger = getLogger("nn.clsf.mlp.morphology")
@@ -77,10 +80,9 @@ class AbstractMorphologysNet(KerasNet):
         self._n_class = 2
         self._passband = str(passband)
         self._table_name = str(kwargs.get("table_name", "synthetic_lc"))
-
         self._spotty = kwargs.get("spotty", False)
 
-        if not self._from_pickle:
+        if not self._from_pickle and self._reinitialize_feed:
             logger.info("obtaining training data")
 
             self._feed = Feed(config.DB_CONF, table_name=self._table_name)
@@ -102,13 +104,14 @@ class MlpNet(AbstractMorphologysNet):
         loss_fn = losses.sparse_categorical_crossentropy
 
         self.model.compile(optimizer=optimizer, loss=loss_fn, metrics=['accuracy'])
+        self.weights = self.model.get_weights()
 
 
 class Conv1DNet(AbstractMorphologysNet):
     def __init__(self, test_size, passband='Generic.Bessell.V', **kwargs):
         super().__init__(test_size, passband, **kwargs)
 
-        if not self._from_pickle:
+        if not self._from_pickle and self._reinitialize_feed:
             self.train_xs = np.expand_dims(self.train_xs, axis=2)
             self.test_xs = np.expand_dims(self.test_xs, axis=2)
 
@@ -129,7 +132,6 @@ class Conv1DNet(AbstractMorphologysNet):
         optimizer = optimizers.Adam(lr=self._learning_rate, decay=self._optimizer_decay)
         loss_fn = losses.categorical_crossentropy
         self.model.compile(loss=loss_fn, optimizer=optimizer, metrics=['accuracy'])
-
         self.weights = self.model.get_weights()
 
 
@@ -148,6 +150,10 @@ if __name__ == "__main__":
     parser.add_argument('--save-pickle', type=str, nargs='?', help='path to save pickle file', default=None)
     parser.add_argument('--save-history', type=str, nargs='?',
                         help='path to json where fit history will be stored', default=None)
+    parser.add_argument('--lr-tuning', type=utils.str2bool,
+                        nargs='?', help='execute learning rate tunning', default=False)
+    parser.add_argument('--home', type=str, nargs='?', help='storage for historical data',
+                        default=op.join(op.expanduser("~"), ".elisa"))
 
     args = parser.parse_args()
 
@@ -164,16 +170,57 @@ if __name__ == "__main__":
     )
     conv = net(test_size=args.test_size, passband=args.passband, **params)
 
-    if args.save_pickle is not None:
-        conv.save_feed(args.save_pickle)
+    if not args.lr_tuning:
+        if args.save_pickle is not None:
+            conv.save_feed(args.save_pickle)
 
-    conv.train(epochs=args.epochs)
+        conv.train(epochs=args.epochs)
 
-    if args.save_history is not None:
-        conv.save_history(args.save_history)
+        if args.save_history is not None:
+            conv.save_history(args.save_history)
 
-    logger.info(f'model precision: {conv.model_precission}')
-    logger.info(conv.model.summary())
+        logger.info(f'model precision: {conv.model_precission}')
+        logger.info(conv.model.summary())
+    else:
+        lr_s = [1e-5, 1e-4, 1e-3, 4e-3, 7e-3, 1e-2, 3e-2, 1e-1]
+        loss_history = []
+        for learning_rate in lr_s:
+            params.update(dict(
+                learning_rate=learning_rate,
+                optimizer_decay=0.0,
+                reinitialize_feed=False
+            ))
+            conv.__init__(test_size=args.test_size, passband=args.passband, **params)
+            conv.reset_weights()
+            conv.train(epochs=args.epochs)
+            loss_history.append(conv.history.history["loss"])
+
+        data = json.dumps({
+            "lr_s": lr_s,
+            "loss_history": loss_history
+        }, indent=4)
+
+        logger.info(data)
+        if args.home is not None:
+            if not op.isdir(args.home):
+                os.makedirs(args.home, exist_ok=True)
+
+            now = datetime.now()
+            filename = f'{now.strftime(conf.DATETIME_MASK)}.json'
+            with open(op.join(args.home, filename), "w") as f:
+                f.write(data)
+
+        from matplotlib import pyplot as plt
+
+        for hist, learning_rate in zip(loss_history, lr_s):
+            plt.plot(np.arange(0, len(hist)), hist, label=f"lr: {learning_rate}")
+
+        plt.legend()
+        plt.show()
+
+        plt.xscale("log")
+        plt.plot(lr_s, np.array(loss_history)[:, -1])
+        plt.show()
 
     # predictions = mlp.model.predict(mlp.test_xs)
     # for val, pred in zip(mlp.test_ys, predictions):
