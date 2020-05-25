@@ -117,7 +117,7 @@ def main(args, modules):
         logger.info(f'model precision: {conv.model_precission}')
         logger.info(conv.model.summary())
     else:
-        lr_s = [1e-5, 1e-4, 1e-3, 4e-3, 7e-3, 1e-2, 3e-2, 1e-1]
+        lr_s = [1e-6, 1e-5, 1e-4, 1e-3, 4e-3, 7e-3, 1e-2, 3e-2, 1e-1]
         loss_history = []
         for learning_rate in lr_s:
             params.update(dict(
