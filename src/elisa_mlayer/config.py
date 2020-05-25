@@ -11,3 +11,5 @@ DB_CONF = {
 
 PHASES = np.linspace(-0.6, 0.6, 100, endpoint=True)
 PASSBAND = ["Generic.Bessell.B", "Generic.Bessell.V", "Generic.Bessell.R"]
+
+DATETIME_MASK = '%Y-%m-%dT%H.%M.%S'

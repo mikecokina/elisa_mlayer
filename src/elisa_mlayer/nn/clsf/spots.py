@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 import sys
 import json
+import os.path as op
 
 from numpy import random
 from keras.utils import to_categorical
@@ -14,6 +15,7 @@ from elisa_mlayer import (
 )
 from elisa_mlayer.gen import conf
 from elisa_mlayer.logger import getLogger
+from elisa_mlayer.nn.clsf import base
 from elisa_mlayer.sio import SyntheticFlatMySqlIO
 from elisa_mlayer.nn.base import layers, losses, nn, optimizers
 from elisa_mlayer.nn.clsf.base import KerasNet
@@ -133,31 +135,12 @@ if __name__ == "__main__":
     parser.add_argument('--save-pickle', type=str, nargs='?', help='path to save pickle file', default=None)
     parser.add_argument('--save-history', type=str, nargs='?',
                         help='path to json where fit history will be stored', default=None)
+    parser.add_argument('--lr-tuning', type=utils.str2bool,
+                        nargs='?', help='execute learning rate tunning', default=False)
+    parser.add_argument('--home', type=str, nargs='?', help='storage for historical data',
+                        default=op.join(op.expanduser("~"), ".elisa"))
 
     args = parser.parse_args()
+    getattr(sys.modules[__name__], args.net)
+    base.main(args, sys.modules[__name__])
 
-    if args.net is None:
-        raise ValueError("Positional argument is required, choices: `MlpNet`, `Conv1DNet`")
-    net = getattr(sys.modules[__name__], args.net)
-    params = dict(
-        table_name=args.table,
-        learning_rate=args.learning_rate,
-        optimizer_decay=args.optimizer_decay,
-        pickle=args.load_pickle or None
-    )
-    conv = net(test_size=args.test_size, passband=args.passband, **params)
-
-    if args.save_pickle is not None:
-        conv.save_feed(args.save_pickle)
-
-    conv.train(epochs=args.epochs)
-
-    if args.save_history is not None:
-        conv.save_history(args.save_history)
-
-    logger.info(f'model precision: {conv.model_precission}')
-    logger.info(conv.model.summary())
-
-    # predictions = mlp.model.predict(mlp.test_xs)
-    # for val, pred in zip(mlp.test_ys, predictions):
-    #     print(val, np.argmax(pred))
