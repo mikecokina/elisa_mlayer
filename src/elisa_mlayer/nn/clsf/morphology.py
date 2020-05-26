@@ -105,7 +105,6 @@ class MlpNet(AbstractMorphologysNet):
         self.model = tf.keras.Sequential()
         vector_size = 100  # self.train_xs.shape[1:]
         self.model.add(layers.Dense(128, activation=nn.relu, input_shape=(vector_size, )))
-
         self.model.add(layers.Dense(256, activation=nn.relu))
         self.model.add(layers.Dense(2, activation=nn.softmax))
 

@@ -146,7 +146,7 @@ def main(args, modules):
 
     else:
         lr_s = [1e-6, 1e-5, 1e-4, 1e-3, 4e-3, 7e-3, 1e-2, 3e-2, 1e-1]
-        loss_history = []
+        loss_history, val_loss_history = [], []
         for learning_rate in lr_s:
             params.update(dict(
                 learning_rate=learning_rate,
@@ -157,10 +157,12 @@ def main(args, modules):
             _nn.reset_weights()
             _nn.train(epochs=args.epochs)
             loss_history.append(_nn.history.history["loss"])
+            val_loss_history.append(_nn.history.history["val_loss"])
 
         data = json.dumps({
             "lr_s": lr_s,
-            "loss_history": loss_history
+            "loss_history": loss_history,
+            "val_loss_history": val_loss_history
         }, indent=4)
 
         logger.info(data)
@@ -172,15 +174,3 @@ def main(args, modules):
             filename = f'{now.strftime(config.DATETIME_MASK)}.json'
             with open(op.join(args.home, filename), "w") as f:
                 f.write(data)
-
-        # from matplotlib import pyplot as plt
-        #
-        # for hist, learning_rate in zip(loss_history, lr_s):
-        #     plt.plot(np.arange(0, len(hist)), hist, label=f"lr: {learning_rate}")
-        #
-        # plt.legend()
-        # plt.show()
-        #
-        # plt.xscale("log")
-        # plt.plot(lr_s, np.array(loss_history)[:, -1])
-        # plt.show()
