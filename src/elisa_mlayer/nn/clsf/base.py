@@ -128,10 +128,10 @@ def main(args, modules):
     )
     _nn = net(test_size=args.test_size, passband=args.passband, **params)
 
-    if not args.lr_tuning:
-        if args.save_pickle is not None:
-            _nn.save_feed(args.save_pickle)
+    if args.save_pickle is not None:
+        _nn.save_feed(args.save_pickle)
 
+    if not args.lr_tuning:
         _nn.train(epochs=args.epochs)
 
         if args.save_model is not None:
