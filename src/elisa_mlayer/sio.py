@@ -258,6 +258,49 @@ class ObservedMySqlIO(AbstractMySqlIO):
 
         self.finish_session(_session, w=True)
 
+    def get_predictor_iter(self, batch_size, morphology=None, limit=np.inf):
+        self._preinit_method()
+        _session = self._get_session()
+
+        def _iter():
+            loop_index = 0
+
+            while True:
+
+                if morphology is not None:
+                    result = _session.query(self._model_instance) \
+                        .filter(self._model_declarative_meta.morphology == morphology) \
+                        .with_entities(self._model_declarative_meta.morphology,
+                                       self._model_declarative_meta.data) \
+                        .offset(loop_index * batch_size) \
+                        .limit(batch_size) \
+                        .all()
+                else:
+                    result = _session.query(self._model_instance) \
+                        .with_entities(self._model_declarative_meta.morphology,
+                                       self._model_declarative_meta.data) \
+                        .offset(loop_index * batch_size) \
+                        .limit(batch_size) \
+                        .all()
+
+                loop_index += 1
+                if len(result) == 0:
+                    break
+
+                ys, xs = zip(*result)
+                ys, xs = np.array(ys), np.array([json.loads(row)["flux"] for row in xs])
+                is_detached = ys == 'detached'
+                all_entities = ys.shape[0]
+                ys = np.zeros(all_entities, dtype=bool)
+                ys[is_detached] = True
+
+                yield xs, ys
+
+                if loop_index > limit:
+                    break
+
+        return _iter
+
 
 class SyntheticFlatMySqlIO(AbstractMySqlIO):
     builder_fn = staticmethod(build_synthetic_lightcurve_model_flat)

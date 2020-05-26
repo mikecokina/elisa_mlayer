@@ -1,13 +1,11 @@
 import argparse
 import json
-import os
 import os.path as op
 import sys
 import time
 import numpy as np
 import tensorflow as tf
 
-from datetime import datetime
 from keras.utils import to_categorical
 from numpy import random
 
@@ -23,7 +21,7 @@ from elisa_mlayer.nn.clsf.base import KerasNet
 from elisa_mlayer.sio import SyntheticFlatMySqlIO
 
 random.seed(int(time.time()))
-logger = getLogger("nn.clsf.mlp.morphology")
+logger = getLogger("nn.clsf.morphology")
 
 
 class Feed(SyntheticFlatMySqlIO):
@@ -93,16 +91,26 @@ class AbstractMorphologysNet(KerasNet):
 
 class MlpNet(AbstractMorphologysNet):
     def __init__(self, test_size, passband='Generic.Bessell.V', **kwargs):
+        """
+        Following concept most likely won't work in case of tf >= 2.0 due to annoying incompatibility
+        Take a look at commit c57a2c46d1536306849e41687405322141bc737f to make it work
+        """
         super().__init__(test_size, passband, **kwargs)
+
+        if not self._from_pickle and self._reinitialize_feed:
+            self.train_ys = to_categorical(self.train_ys, self._n_class)
+            self.test_ys = to_categorical(self.test_ys, self._n_class)
 
         logger.info("creating neural model")
         self.model = tf.keras.Sequential()
-        self.model.add(layers.Dense(128, activation=nn.relu, input_shape=self.train_xs.shape[1:]))
+        vector_size = 100  # self.train_xs.shape[1:]
+        self.model.add(layers.Dense(128, activation=nn.relu, input_shape=(vector_size, )))
+
         self.model.add(layers.Dense(256, activation=nn.relu))
         self.model.add(layers.Dense(2, activation=nn.softmax))
 
         optimizer = optimizers.Adam(lr=self._learning_rate, decay=self._optimizer_decay)
-        loss_fn = losses.sparse_categorical_crossentropy
+        loss_fn = losses.categorical_crossentropy
 
         self.model.compile(optimizer=optimizer, loss=loss_fn, metrics=['accuracy'])
         self.weights = self.model.get_weights()
@@ -121,7 +129,8 @@ class Conv1DNet(AbstractMorphologysNet):
 
         logger.info("creating neural model")
         self.model = tf.keras.Sequential()
-        self.model.add(layers.Convolution1D(64, 20, activation=nn.relu, input_shape=(self.train_xs.shape[1], 1)))
+        vector_size = 100  # self.train_xs.shape[1]
+        self.model.add(layers.Convolution1D(64, 20, activation=nn.relu, input_shape=(vector_size, 1)))
         self.model.add(layers.MaxPooling1D(pool_size=2))
         self.model.add(layers.Convolution1D(32, 10, activation=nn.relu))
         self.model.add(layers.MaxPooling1D(pool_size=2))
@@ -149,12 +158,11 @@ if __name__ == "__main__":
     parser.add_argument('--optimizer-decay', type=float, nargs='?', help='optimizer decay', default=1e-6)
     parser.add_argument('--load-pickle', type=str, nargs='?', help='path to load pickle file', default=None)
     parser.add_argument('--save-pickle', type=str, nargs='?', help='path to save pickle file', default=None)
-    parser.add_argument('--save-history', type=str, nargs='?',
-                        help='path to json where fit history will be stored', default=None)
-    parser.add_argument('--lr-tuning', type=utils.str2bool,
-                        nargs='?', help='execute learning rate tunning', default=False)
+    parser.add_argument('--save-history', type=str, nargs='?', help='path to json history', default=None)
+    parser.add_argument('--lr-tuning', type=utils.str2bool, nargs='?', help='run learning rate tunning', default=False)
     parser.add_argument('--home', type=str, nargs='?', help='storage for historical data',
                         default=op.join(op.expanduser("~"), ".elisa"))
+    parser.add_argument('--save-model', type=str, nargs='?', help='path to h5 file for model save', default=None)
 
     args = parser.parse_args()
     getattr(sys.modules[__name__], args.net)

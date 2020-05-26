@@ -80,14 +80,19 @@ class MlpNet(AbstractHasSpotsNet):
     def __init__(self, test_size, passband='Generic.Bessell.V', **kwargs):
         super().__init__(test_size, passband, **kwargs)
 
+        if not self._from_pickle and self._reinitialize_feed:
+            self.train_ys = to_categorical(self.train_ys, self._n_class)
+            self.test_ys = to_categorical(self.test_ys, self._n_class)
+
         logger.info("creating neural model")
         self.model = tf.keras.Sequential()
-        self.model.add(layers.Dense(128, activation=nn.relu, input_shape=self.train_xs.shape[1:]))
+        vector_size = 100
+        self.model.add(layers.Dense(128, activation=nn.relu, input_shape=(vector_size, )))
         self.model.add(layers.Dense(256, activation=nn.relu))
         self.model.add(layers.Dense(2, activation=nn.softmax))
 
         optimizer = optimizers.Adam(lr=self._learning_rate, decay=self._optimizer_decay)
-        loss_fn = losses.sparse_categorical_crossentropy
+        loss_fn = losses.categorical_crossentropy
 
         self.model.compile(optimizer=optimizer, loss=loss_fn, metrics=['accuracy'])
         self.weights = self.model.get_weights()
@@ -106,7 +111,8 @@ class Conv1DNet(AbstractHasSpotsNet):
 
         logger.info("creating neural model")
         self.model = tf.keras.Sequential()
-        self.model.add(layers.Convolution1D(64, 20, activation=nn.relu, input_shape=(self.train_xs.shape[1], 1)))
+        vector_size = 100  # self.train_xs.shape[1]
+        self.model.add(layers.Convolution1D(64, 20, activation=nn.relu, input_shape=(vector_size, 1)))
         self.model.add(layers.MaxPooling1D(pool_size=2))
         self.model.add(layers.Convolution1D(32, 10, activation=nn.relu))
         self.model.add(layers.MaxPooling1D(pool_size=2))
@@ -143,4 +149,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
     getattr(sys.modules[__name__], args.net)
     base.main(args, sys.modules[__name__])
-

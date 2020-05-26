@@ -61,14 +61,37 @@ class KerasNet(object):
     def load_feed(self, fpath):
         self.train_xs, self.train_ys, self.test_xs, self.test_ys = pickle.load(open(fpath, "rb"))
 
-    def reset_weights(self):
-        if self.weights is not None and self.model is not None:
-            self.model.set_weights(self.weights)
-
     def save_history(self, fpath):
         if self.history is not None:
             with open(fpath, "w") as f:
                 f.write(json.dumps(self.history.history, indent=4))
+
+    def reset_weights(self):
+        if self.weights is not None and self.model is not None:
+            self.model.set_weights(self.weights)
+
+    def save_weights(self, fpath):
+        if self.model is not None:
+            base_dir = op.dirname(fpath)
+            if not op.isdir(base_dir):
+                os.makedirs(base_dir, exist_ok=True)
+
+            fpath = f"{fpath}.h5" if not str(fpath).endswith("h5") else fpath
+            self.model.save_weights(fpath)
+            return
+        raise IOError("No model initialized.")
+
+    def load_weights(self, fpath):
+        if self.model is not None and op.isfile(fpath):
+            self.model.load_weights(fpath)
+            return
+        raise IOError("No model initialized or invalid path.")
+
+    def predict(self, xs, argmax=False):
+        predictions = self.model.predict(xs)
+        if argmax:
+            predictions = [np.argmax(pred) for pred in predictions]
+        return predictions
 
 
 class KerasSequenceNet(object):
@@ -103,19 +126,24 @@ def main(args, modules):
         pickle=args.load_pickle or None
 
     )
-    conv = net(test_size=args.test_size, passband=args.passband, **params)
+    _nn = net(test_size=args.test_size, passband=args.passband, **params)
 
     if not args.lr_tuning:
         if args.save_pickle is not None:
-            conv.save_feed(args.save_pickle)
+            _nn.save_feed(args.save_pickle)
 
-        conv.train(epochs=args.epochs)
+        _nn.train(epochs=args.epochs)
+
+        if args.save_model is not None:
+            logger.info("saving model")
+            _nn.save_weights(args.save_model)
 
         if args.save_history is not None:
-            conv.save_history(args.save_history)
+            _nn.save_history(args.save_history)
 
-        logger.info(f'model precision: {conv.model_precission}')
-        logger.info(conv.model.summary())
+        logger.info(f'model precision: {_nn.model_precission}')
+        logger.info(_nn.model.summary())
+
     else:
         lr_s = [1e-6, 1e-5, 1e-4, 1e-3, 4e-3, 7e-3, 1e-2, 3e-2, 1e-1]
         loss_history = []
@@ -125,10 +153,10 @@ def main(args, modules):
                 optimizer_decay=0.0,
                 reinitialize_feed=False
             ))
-            conv.__init__(test_size=args.test_size, passband=args.passband, **params)
-            conv.reset_weights()
-            conv.train(epochs=args.epochs)
-            loss_history.append(conv.history.history["loss"])
+            _nn.__init__(test_size=args.test_size, passband=args.passband, **params)
+            _nn.reset_weights()
+            _nn.train(epochs=args.epochs)
+            loss_history.append(_nn.history.history["loss"])
 
         data = json.dumps({
             "lr_s": lr_s,
