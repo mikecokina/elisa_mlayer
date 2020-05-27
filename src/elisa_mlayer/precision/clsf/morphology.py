@@ -4,11 +4,11 @@ import numpy as np
 from elisa_mlayer import config
 from elisa_mlayer import sio
 from elisa_mlayer.nn.clsf.morphology import Conv1DNet, MlpNet
-from elisa.logger import getPersistentLogger
+from elisa_mlayer.logger import getLogger
 from keras import backend as K
 from keras.utils import to_categorical
 
-logger = getPersistentLogger("precision.clsf.morphology")
+logger = getLogger("precision.clsf.morphology")
 
 NETS = {
     "Conv1DNet": Conv1DNet,

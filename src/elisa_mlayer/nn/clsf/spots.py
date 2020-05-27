@@ -141,10 +141,10 @@ if __name__ == "__main__":
     parser.add_argument('--save-pickle', type=str, nargs='?', help='path to save pickle file', default=None)
     parser.add_argument('--save-history', type=str, nargs='?',
                         help='path to json where fit history will be stored', default=None)
-    parser.add_argument('--lr-tuning', type=utils.str2bool,
-                        nargs='?', help='execute learning rate tunning', default=False)
+    parser.add_argument('--lr-tuning', type=utils.str2bool, nargs='?', help='run learning rate tunning', default=False)
     parser.add_argument('--home', type=str, nargs='?', help='storage for historical data',
                         default=op.join(op.expanduser("~"), ".elisa"))
+    parser.add_argument('--save-model', type=str, nargs='?', help='path to h5 file for model save', default=None)
 
     args = parser.parse_args()
     getattr(sys.modules[__name__], args.net)

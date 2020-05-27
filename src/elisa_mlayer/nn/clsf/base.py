@@ -5,7 +5,7 @@ import os.path as op
 import numpy as np
 
 from datetime import datetime
-from elisa.logger import getLogger
+from elisa_mlayer.logger import getLogger
 from elisa_mlayer import config
 
 logger = getLogger("nn.clsf.base")
