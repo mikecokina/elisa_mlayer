@@ -32,6 +32,9 @@ class KerasNet(object):
         self._learning_rate = float(kwargs.get("learning_rate", 1e-3))
         self._optimizer_decay = float(kwargs.get("optimizer_decay", 1e-6))
 
+        logger.info(f'using learning rate: {self._learning_rate}')
+        logger.info(f'using optimizer_decay rate: {self._optimizer_decay}')
+
     @property
     def model_precission(self):
         val_loss, val_acc = self.model.evaluate(self.test_xs, self.test_ys)
