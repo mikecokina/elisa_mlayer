@@ -6,7 +6,7 @@ from typing import List
 from matplotlib import pyplot as plt
 
 
-FILENAME = "mlpnet_morphology_spotty.json"
+FILENAME = "conv1d_morphology_spotty.json"
 DATA = op.join(op.abspath(op.dirname(__file__)), "data")
 
 

@@ -37,7 +37,6 @@ class Feed(SyntheticFlatMySqlIO):
             getattr(self._model_declarative_meta, conf.PASSBAND_TO_COL[passband])
         ).all()
 
-        logger.info('shuffling data')
         self.finish_session(session, w=False)
 
         logger.info('preparing test and training batches')
@@ -52,12 +51,13 @@ class Feed(SyntheticFlatMySqlIO):
             r_diff = np.abs(xs[:, 28][ys] - xs[:, 70][ys])
         oconell = np.greater(r_diff, threshold)
 
-        if len(ys[ys][oconell]) < len(ys[ys]) * 0.5:
-            raise ValueError("Value `flux-threshold` is too aggressive")
+        # if len(ys[ys][oconell]) < len(ys[ys]) * 0.5:
+        #     raise ValueError("Value `flux-threshold` is too aggressive")
 
         xs = np.concatenate((xs[~ys], xs[ys][oconell]))
         ys = np.concatenate((ys[~ys], ys[ys][oconell]))
 
+        logger.info('shuffling data')
         idx = np.arange(0, len(xs), 1)
         np.random.shuffle(idx)
 
