@@ -123,10 +123,12 @@ def main(args, modules):
     net = getattr(modules, args.net)
     params = dict(
         table_name=args.table,
-        spotty=args.spotty,
         learning_rate=args.learning_rate,
         optimizer_decay=args.optimizer_decay,
-        pickle=args.load_pickle or None
+        pickle=args.load_pickle or None,
+        **{"spotty": args.spotty} if "spotty" in dir(args) else {},
+        **{"flux_threshold": args.flux_threshold} if "flux_threshold" in dir(args) else {},
+        **{"relative_threshold": args.relative_threshold} if "relative_threshold" in dir(args) else {}
 
     )
     _nn = net(test_size=args.test_size, passband=args.passband, **params)

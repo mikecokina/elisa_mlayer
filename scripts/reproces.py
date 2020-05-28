@@ -74,6 +74,12 @@ for row in dataset:
     else:
         origin_lightcurve = {"flux": [], "phase": []}
 
+    if 'magnitude' in origin_lightcurve:
+        ys = -np.array(ys)
+        ys = np.power(10, (10 - ys) / 2.5)
+        ys = ys / max(ys)
+        ys = ys.tolist()
+
     interpolator = Akima1DInterpolator(xs, ys)
 
     p_xs = full_phase_to_partial(PHASES)
@@ -97,6 +103,6 @@ for row in dataset:
     passband = ""
     metadata = json.dumps(metadata)
 
-    # iterable_data = [(morphology, passband, params, data, origin, period, target, epoch, metadata)]
-    # storage = sio.ObservedMySqlIO(config.DB_CONF, table_name="observed_lc")
-    # storage.save(iterable_data)
+    iterable_data = [(morphology, passband, params, data, origin, period, target, epoch, metadata)]
+    storage = sio.ObservedMySqlIO(config.DB_CONF, table_name="observed_lc")
+    storage.save(iterable_data)

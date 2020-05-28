@@ -29,6 +29,7 @@ def main(net, model_path, table_name):
 
     observed_io = sio.ObservedMySqlIO(db_conf=config.DB_CONF, table_name=table_name)
     xs, ys = next(observed_io.get_predictor_iter(batch_size=100)())
+    ys = np.array(ys, dtype=int)
 
     if net in ["Conv1DNet"]:
         xs = np.expand_dims(xs, axis=2)

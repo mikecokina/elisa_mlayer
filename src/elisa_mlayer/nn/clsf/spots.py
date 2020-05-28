@@ -25,7 +25,7 @@ logger = getLogger("nn.clsf.mlp.has_spots")
 
 
 class Feed(SyntheticFlatMySqlIO):
-    def get_feed(self, test_size=0.2, passband='Generic.Bessell.V'):
+    def get_feed(self, test_size=0.05, threshold=0.05, relative_threshold=True, passband='Generic.Bessell.V'):
         logger.info('initializing db session')
         self._preinit_method()
         session = self._get_session()
@@ -39,12 +39,30 @@ class Feed(SyntheticFlatMySqlIO):
 
         logger.info('shuffling data')
         self.finish_session(session, w=False)
-        np.random.shuffle(data)
 
         logger.info('preparing test and training batches')
         ys, xs = zip(*data)
         ys, xs = np.array(ys), np.array([json.loads(row) for row in xs])
         xs = np.divide(xs, xs.max(axis=1)[:, None])
+
+        # apply threshold
+        if relative_threshold:
+            r_diff = np.abs((xs[:, 28][ys] - xs[:, 70][ys])) / (xs[ys].max(axis=1) - xs[ys].min(axis=1))
+        else:
+            r_diff = np.abs(xs[:, 28][ys] - xs[:, 70][ys])
+        oconell = np.greater(r_diff, threshold)
+
+        if len(ys[ys][oconell]) < len(ys[ys]) * 0.5:
+            raise ValueError("Value `flux-threshold` is too aggressive")
+
+        xs = np.concatenate((xs[~ys], xs[ys][oconell]))
+        ys = np.concatenate((ys[~ys], ys[ys][oconell]))
+
+        idx = np.arange(0, len(xs), 1)
+        np.random.shuffle(idx)
+
+        xs = xs[idx]
+        ys = ys[idx]
 
         all_entities = len(xs)
         test_samples_xs, test_samples_ys = xs[:int(all_entities * test_size)], ys[:int(all_entities * test_size)]
@@ -67,13 +85,16 @@ class AbstractHasSpotsNet(KerasNet):
         self._n_class = 2
         self._passband = str(passband)
         self._table_name = str(kwargs.get("table_name", "synthetic_lc"))
+        self._flux_threshold = float(kwargs.get("flux_threshold", 0.0))
+        self._relative_threshold = bool(kwargs.get("relative_threshold", True))
 
-        if not self._from_pickle:
+        if not self._from_pickle and self._reinitialize_feed:
             logger.info("obtaining training data")
 
             self._feed = Feed(config.DB_CONF, table_name=self._table_name)
             self.train_xs, self.train_ys, self.test_xs, self.test_ys = \
-                self._feed.get_feed(test_size=test_size, passband=passband)
+                self._feed.get_feed(test_size=test_size, threshold=self._flux_threshold,
+                                    relative_threshold=self._relative_threshold, passband=passband)
 
 
 class MlpNet(AbstractHasSpotsNet):
@@ -87,8 +108,9 @@ class MlpNet(AbstractHasSpotsNet):
         logger.info("creating neural model")
         self.model = tf.keras.Sequential()
         vector_size = 100
-        self.model.add(layers.Dense(128, activation=nn.relu, input_shape=(vector_size, )))
-        self.model.add(layers.Dense(256, activation=nn.relu))
+        self.model.add(layers.Dense(128, activation=nn.tanh, input_shape=(vector_size, )))
+        self.model.add(layers.Dense(256, activation=nn.tanh))
+        self.model.add(layers.Dense(128, activation=nn.tanh))
         self.model.add(layers.Dense(2, activation=nn.softmax))
 
         optimizer = optimizers.Adam(lr=self._learning_rate, decay=self._optimizer_decay)
@@ -135,6 +157,9 @@ if __name__ == "__main__":
     parser.add_argument('--passband', type=str, nargs='?', help='passband', default='Generic.Bessell.V')
     parser.add_argument('--test-size', type=float, nargs='?', help='test size', default=0.2)
     parser.add_argument('--epochs', type=int, nargs='?', help='learning epochs', default=100)
+    parser.add_argument('--flux-threshold', type=float, nargs='?', help='flux threshold', default=0.0)
+    parser.add_argument('--relative-threshold', type=utils.str2bool, nargs='?',
+                        help='relative or absolute threshold', default=True)
     parser.add_argument('--learning-rate', type=float, nargs='?', help='learning rate', default=1e-3)
     parser.add_argument('--optimizer-decay', type=float, nargs='?', help='optimizer decay', default=1e-6)
     parser.add_argument('--load-pickle', type=str, nargs='?', help='path to load pickle file', default=None)

@@ -6,6 +6,7 @@ from typing import List
 from matplotlib import pyplot as plt
 
 
+FILENAME = "mlpnet_morphology_spotty.json"
 DATA = op.join(op.abspath(op.dirname(__file__)), "data")
 
 
@@ -15,7 +16,7 @@ def get_data(filename):
         return json.loads(f.read())
 
 
-history = get_data("mlpnet_morphology.json")
+history = get_data(FILENAME)
 loss_history: List = history["loss_history"]
 lr_s: List = history["lr_s"]
 
@@ -26,14 +27,14 @@ for hist, learning_rate in zip(loss_history, lr_s):
     if learning_rate in allowed:
         plt.plot(np.arange(0, len(hist)), hist, label=f"lr: {learning_rate}")
 
-plt.xlabel('Learning Rate [log]')
+plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.legend(loc="upper left", bbox_to_anchor=(0.0, 1.0))
 plt.show()
 
 plt.xscale("log")
 plt.plot(lr_s, np.array(loss_history)[:, -1])
-plt.xlabel('Epoch')
+plt.xlabel('Learning Rate')
 plt.ylabel('Loss')
 plt.legend(loc="upper left", bbox_to_anchor=(0.0, 1.0))
 plt.show()

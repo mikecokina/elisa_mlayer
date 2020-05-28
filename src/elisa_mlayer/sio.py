@@ -400,7 +400,7 @@ class SyntheticFlatMySqlIO(AbstractMySqlIO):
                         .with_entities(
                         getattr(self._model_declarative_meta, "morphology"),
                         getattr(self._model_declarative_meta, conf.PASSBAND_TO_COL[passband])
-                    ).all()
+                    ).order_by(self._model_declarative_meta.id).all()
                 else:
                     result = _session.query(self._model_instance) \
                         .offset(loop_index * batch_size) \
@@ -408,7 +408,7 @@ class SyntheticFlatMySqlIO(AbstractMySqlIO):
                         .with_entities(
                         getattr(self._model_declarative_meta, "morphology"),
                         getattr(self._model_declarative_meta, conf.PASSBAND_TO_COL[passband])
-                    ).all()
+                    ).order_by(self._model_declarative_meta.id)
 
                 loop_index += 1
                 if len(result) == 0:
