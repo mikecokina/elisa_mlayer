@@ -134,12 +134,14 @@ class Conv1DNet(AbstractHasSpotsNet):
         logger.info("creating neural model")
         self.model = tf.keras.Sequential()
         vector_size = 100  # self.train_xs.shape[1]
-        self.model.add(layers.Convolution1D(64, 20, activation=nn.relu, input_shape=(vector_size, 1)))
+        self.model.add(layers.Convolution1D(64, 20, activation=nn.tanh, input_shape=(vector_size, 1)))
         self.model.add(layers.MaxPooling1D(pool_size=2))
-        self.model.add(layers.Convolution1D(32, 10, activation=nn.relu))
+        self.model.add(layers.Convolution1D(32, 10, activation=nn.tanh))
+        self.model.add(layers.MaxPooling1D(pool_size=2))
+        self.model.add(layers.Convolution1D(16, 5, activation=nn.tanh))
         self.model.add(layers.MaxPooling1D(pool_size=2))
         self.model.add(layers.Flatten())
-        self.model.add(layers.Dense(64, activation=nn.relu))
+        self.model.add(layers.Dense(64, activation=nn.tanh))
         self.model.add(layers.Dropout(0.25))
         self.model.add(layers.Dense(2, activation=nn.softmax))
 
