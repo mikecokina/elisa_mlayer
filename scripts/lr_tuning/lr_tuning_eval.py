@@ -6,7 +6,7 @@ from typing import List
 from matplotlib import pyplot as plt
 
 
-FILENAME = "mlpnet_spots.json"
+FILENAME = "conv1d_spots.json"
 DATA = op.join(op.abspath(op.dirname(__file__)), "data")
 
 
@@ -29,7 +29,7 @@ for hist, learning_rate in zip(loss_history, lr_s):
 
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
-plt.legend(loc="upper left", bbox_to_anchor=(0.0, 1.0))
+plt.legend(loc="upper right", bbox_to_anchor=(1.0, 1.0))
 plt.show()
 
 plt.xscale("log")

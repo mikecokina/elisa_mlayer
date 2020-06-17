@@ -31,8 +31,8 @@ _________________________________________________________________
 2020-05-28 01:16:56,031 - 5669 - nn.clsf.base - INFO: None
 
 
-2020-05-28 08:26:12,917 - 12920 - precision.clsf.morphology - INFO: Precision
-2020-05-28 08:26:12,917 - 12920 - precision.clsf.morphology - INFO: Total Acc: 0.94
-2020-05-28 08:26:12,917 - 12920 - precision.clsf.morphology - INFO: Total Loss: 0.8746528625488281
-2020-05-28 08:26:12,917 - 12920 - precision.clsf.morphology - INFO: Detached Acc: 0.9622641509433962
-2020-05-28 08:26:12,917 - 12920 - precision.clsf.morphology - INFO: Over-Contact Acc: 0.9148936170212766
+2020-05-31 17:18:04,051 - 18692 - precision.clsf.morphology - INFO: Precision
+2020-05-31 17:18:04,051 - 18692 - precision.clsf.morphology - INFO: Total Acc: 0.95
+2020-05-31 17:18:04,051 - 18692 - precision.clsf.morphology - INFO: Total Loss: 0.7134720087051392
+2020-05-31 17:18:04,051 - 18692 - precision.clsf.morphology - INFO: Detached Acc: 0.9622641509433962
+2020-05-31 17:18:04,051 - 18692 - precision.clsf.morphology - INFO: Over-Contact Acc: 0.9361702127659575

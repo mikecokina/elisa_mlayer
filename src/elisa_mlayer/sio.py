@@ -166,6 +166,27 @@ class AbstractMySqlIO(object):
         if self._model_instance is None:
             self._initialise_model()
 
+    def get_iter(self, batch_size, limit=np.inf):
+        self._preinit_method()
+        _session = self._get_session()
+
+        def _iter():
+            loop_index = 0
+
+            while True:
+
+                result = _session.query(self._model_instance) \
+                    .offset(loop_index * batch_size) \
+                    .limit(batch_size) \
+                    .all()
+                loop_index += 1
+                if len(result) == 0:
+                    break
+                yield result
+                if loop_index > limit:
+                    break
+        return _iter
+
 
 class SyntheticMySqlIO(AbstractMySqlIO):
     builder_fn = staticmethod(build_synthetic_lightcurve_model)
@@ -400,7 +421,7 @@ class SyntheticFlatMySqlIO(AbstractMySqlIO):
                         .with_entities(
                         getattr(self._model_declarative_meta, "morphology"),
                         getattr(self._model_declarative_meta, conf.PASSBAND_TO_COL[passband])
-                    ).order_by(self._model_declarative_meta.id).all()
+                    ).all()
                 else:
                     result = _session.query(self._model_instance) \
                         .offset(loop_index * batch_size) \
@@ -408,7 +429,7 @@ class SyntheticFlatMySqlIO(AbstractMySqlIO):
                         .with_entities(
                         getattr(self._model_declarative_meta, "morphology"),
                         getattr(self._model_declarative_meta, conf.PASSBAND_TO_COL[passband])
-                    ).order_by(self._model_declarative_meta.id)
+                    ).all()
 
                 loop_index += 1
                 if len(result) == 0:
