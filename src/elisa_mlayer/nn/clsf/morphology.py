@@ -28,6 +28,7 @@ class Feed(SyntheticFlatMySqlIO):
     def get_feed(self, test_size=0.2, passband='Generic.Bessell.V', spotty=False):
 
         logger.info('initializing db session')
+        logger.info(f'using spotty data: {spotty}')
         self._preinit_method()
         session = self._get_session()
 
